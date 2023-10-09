@@ -4,22 +4,25 @@
 # documentation.
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
-name: Java CI with Gradle
+name: Pull Request Test
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions: read-all
+
 jobs:
-  checkstyle:
-    permissions: write-all
+  build-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - name: Setting Checkout
-        uses: actions/checkout@v3
+      - name: Git Checkout
+        uses: actions/checkout@v3.0.2
 
-      - name: Filter Paths
-        uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v2
         id: changes
         with:
           filters: |
@@ -27,47 +30,51 @@ jobs:
               - 'build.gradle'
               - 'src/**'
 
-  build:
-    permissions: write-all
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setting Checkout
-        uses: actions/checkout@v3
-
-      - name: Filter Paths
-        uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            application:
-              - 'build.gradle'
-              - 'src/**'
-
-      - name: Set up JDK 17
+      - name: JDK 설치
         if: steps.changes.outputs.application == 'true'
         uses: actions/setup-java@v3
         with:
-          java-version: 17
           distribution: zulu
+          java-version: 17
           cache: 'gradle'
-
-      - name: Build with Gradle
+      - name: Gradle Build
         if: steps.changes.outputs.application == 'true'
-        uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
-        with:
-          arguments: build
+        run: |
+          ./gradlew build --parallel
 
-      - name: Add coverage to PR
+      - name: Coverage Report
         if: steps.changes.outputs.application == 'true'
         uses: madrapps/jacoco-report@v1.6.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          title: Code Coverage Report
+          title: Code Coverage
           update-comment: true
-          min-coverage-overall: 10
-          min-coverage-changed-files: 10
+          min-coverage-overall: 30
+          min-coverage-changed-files: 30
           paths: |
             ${{ github.workspace }}/**/build/jacoco/jacoco.xml
+
+  style-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v3.0.2
+
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            application:
+              - 'build.gradle'
+              - 'src/**'
+
+      - name: JDK 설치
+        if: steps.changes.outputs.application == 'true'
+        uses: actions/setup-java@v3
+        with:
+          distribution: zulu
+          java-version: 17
+          cache: 'gradle'
 
       - name: Style Check
         if: steps.changes.outputs.application == 'true'
