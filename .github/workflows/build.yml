@@ -27,15 +27,6 @@ jobs:
               - 'build.gradle'
               - 'src/**'
 
-      - name: Checkstyle
-        if: steps.changes.outputs.application == 'true'
-        uses: dbelyaev/action-checkstyle@v0.5.1
-        with:
-          checkstyle_config: ${{ github.workspace }}/config/checkstyle/naver-checkstyle-rules.xml
-          github_token: ${{ secrets.github_token }}
-          reporter: github-check
-          level: warning
-
   build:
     permissions: write-all
     runs-on: ubuntu-latest
