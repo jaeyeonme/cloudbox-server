@@ -1,28 +1,18 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '2.7.9'
+    id 'org.springframework.boot' version '3.0.11'
     id 'io.spring.dependency-management' version '1.0.15.RELEASE'
-    id 'checkstyle'
     id 'jacoco'
-}
-
-checkstyle {
-    ignoreFailures = true // 분석결과 예외가 발생하면 빌드실패 발생시키는 것을 제외
-    configFile = rootProject.file("${rootDir}/config/checkstyle/naver-checkstyle-rules.xml")
-    reportsDir = file("${buildDir}/checkstyle-output") // 리포트 파일이 위치할 디렉토리 지정
-    toolVersion = '10.6.0'
-}
-
-checkstyleMain {
-    reports {
-        xml.destination = file("${checkstyle.reportsDir}/checkstyle-report.xml") // 리포트 파일의 위치 및 파일명 지정
-    }
+    id 'com.diffplug.spotless' version '6.21.0'
 }
 
 
 group = 'io.jaeyeon'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+
+java {
+    sourceCompatibility = '17'
+}
 
 configurations {
     compileOnly {
@@ -50,48 +40,70 @@ tasks.named('test') {
 }
 
 jacoco {
-    toolVersion = '0.8.8'
+    toolVersion = "0.8.8"
 }
 
-jacocoTestReport {
+tasks.named('test') {
+    useJUnitPlatform()
+
+    jacoco {}
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
     reports {
-        html.enabled true
-        csv.enabled true
-        xml.enabled true
-    }
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    exclude: ["io/jaeyeon/numblemybox/App.class"])
-        }))
-    }
-    finalizedBy 'jacocoTestCoverageVerification'
+        xml.required = true
+        html.required = true
+        csv.required = false
 
+        xml.destination(file("build/jacoco/jacoco.xml"))
+        html.destination(file("build/jacoco/jacoco.html"))
+    }
+
+    finalizedBy(tasks.jacocoTestCoverageVerification)
 }
 
-jacocoTestCoverageVerification {
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                    exclude: ["io/jaeyeon/numblemybox/App.class"])
-        }))
-    }
+tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             enabled = true
-            element = 'CLASS'
+            element = "CLASS"
 
             limit {
-                counter = 'LINE'
-                value = 'COVEREDRATIO'
-                minimum = 0.00
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = BigDecimal.valueOf(0.1)
             }
 
             limit {
-                counter = 'BRANCH'
-                value = 'COVEREDRATIO'
-                minimum = 0.00
+                counter = "LINE"
+                value = "TOTALCOUNT"
+                maximum = BigDecimal.valueOf(100)
             }
+
+            excludes = List.of(
+                    "*.test.*",
+                    "*.controller.*",
+                    "io.jaeyeon.numblemybox.App",
+            )
         }
+    }
+}
+
+tasks.register('updateGitHooks', Copy) {
+    from './scripts/pre-commit'
+    into './.git/hooks'
+    fileMode 0775
+}
+compileJava.dependsOn updateGitHooks
+
+spotless {
+    java {
+        target("**/*.java")   // 모든 Java 파일을 대상
+        googleJavaFormat()    // Google Java Format을 사용
+        removeUnusedImports() // 사용하지 않는 Import를 제거
+        trimTrailingWhitespace() // 라인 끝의 공백을 제거
+        indentWithSpaces(4)   // 공백 4개를 사용하여 들여쓰기
+        endWithNewline()      // 파일의 끝에 새 줄을 추가
     }
 }
