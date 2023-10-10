@@ -82,16 +82,3 @@ jobs:
         if: steps.changes.outputs.application == 'true'
         run: |
           ./gradlew spotlessCheck
-
-  code-review:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3.0.2
-
-      - name: Code Review
-        uses: anc95/ChatGPT-CodeReview@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPEN_API_KEY }}
-          # optional
-          LANGUAGE: Korean
