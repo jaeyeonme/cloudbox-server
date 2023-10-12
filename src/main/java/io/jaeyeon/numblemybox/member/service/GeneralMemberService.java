@@ -2,10 +2,14 @@ package io.jaeyeon.numblemybox.member.service;
 
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.NumbleMyBoxException;
+import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
+import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.dto.StorageInfo;
+import java.io.File;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GeneralMemberService implements MemberService {
 
   private final MemberRepository memberRepository;
+  private final FolderRepository folderRepository;
 
   @Override
   public void registrationMember(Member member) {
@@ -25,6 +30,8 @@ public class GeneralMemberService implements MemberService {
       throw new NumbleMyBoxException(ErrorCode.MEMBER_ALREADY_EXISTS);
     }
     memberRepository.save(member);
+    // 사용자 등록 후 Root 폴더 생성 및 사용 가능한 공간 설정
+    createRootFolderAndSetInitialSpace(member);
   }
 
   @Override
@@ -50,6 +57,7 @@ public class GeneralMemberService implements MemberService {
   }
 
   @Override
+  @Transactional(readOnly = true)
   public boolean isValidMember(MemberRegistration dto, PasswordEncoder passwordEncoder) {
     Member member = findMemberByEmail(dto.email());
     return member.isPasswordMatching(dto.password(), passwordEncoder);
@@ -59,5 +67,23 @@ public class GeneralMemberService implements MemberService {
   public void changePassword(
       Member member, ChangePasswordRequest requestDto, PasswordEncoder passwordEncoder) {
     member.changePassword(passwordEncoder.encode(requestDto.newPassword()));
+  }
+
+  @Override
+  public void createRootFolderAndSetInitialSpace(Member member) {
+    // ROOT 폴더 생성
+    String rootFolderPath = new File(".").getAbsolutePath() + "/storage/" + member.getId();
+    Folder rootFolder =
+        Folder.builder().name(member.getEmail()).path(rootFolderPath).owner(member).build();
+    folderRepository.save(rootFolder);
+  }
+
+  @Override
+  public StorageInfo getStorageInfo(Long memberId) {
+    Member member =
+        memberRepository
+            .findMemberById(memberId)
+            .orElseThrow(() -> new NumbleMyBoxException(ErrorCode.MEMBER_NOT_FOUND));
+    return new StorageInfo(member.getAllocatedSpace(), member.getUsedSpace());
   }
 }

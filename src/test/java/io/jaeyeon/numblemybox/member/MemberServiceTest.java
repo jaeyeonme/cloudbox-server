@@ -2,10 +2,12 @@ package io.jaeyeon.numblemybox.member;
 
 import static org.mockito.BDDMockito.*;
 
+import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.service.GeneralMemberService;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;
@@ -24,6 +26,7 @@ class MemberServiceTest {
   @InjectMocks private GeneralMemberService memberService;
 
   @Mock private MemberRepository memberRepository;
+  @Mock private FolderRepository folderRepository;
 
   @Mock private PasswordEncoder passwordEncoder;
 
@@ -118,5 +121,33 @@ class MemberServiceTest {
 
     // then
     Assertions.assertEquals(newPassword, member.getPassword());
+  }
+
+  @Test
+  @DisplayName("ROOT 폴더 생성 및 초기 공간 설정 확인")
+  void testCreateRootFolderAndSetInitialSpace() throws Exception {
+    // given
+    given(memberRepository.save(any(Member.class))).willReturn(member);
+
+    // when
+    memberService.registrationMember(member);
+
+    // then
+    then(memberRepository).should().save(any(Member.class));
+  }
+
+  @Test
+  @DisplayName("사용 가능한 공간 정보 조회 확인")
+  void testGetStorageInfo() throws Exception {
+    // given
+    given(memberRepository.findMemberById(anyLong())).willReturn(Optional.of(member));
+
+    // when
+    StorageInfo storageInfo = memberService.getStorageInfo(1L);
+
+    // then
+    Assertions.assertNotNull(storageInfo);
+    Assertions.assertEquals(30.0, storageInfo.allocatedSpace());
+    Assertions.assertEquals(0.0, storageInfo.usedSpace());
   }
 }

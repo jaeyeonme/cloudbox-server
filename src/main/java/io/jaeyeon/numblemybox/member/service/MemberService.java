@@ -3,6 +3,7 @@ package io.jaeyeon.numblemybox.member.service;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.dto.StorageInfo;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 public interface MemberService {
@@ -18,4 +19,8 @@ public interface MemberService {
 
   void changePassword(
       Member member, ChangePasswordRequest requestDto, PasswordEncoder passwordEncoder);
+
+  void createRootFolderAndSetInitialSpace(Member member);
+
+  StorageInfo getStorageInfo(Long memberId);
 }

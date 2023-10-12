@@ -29,6 +29,12 @@ public class Member {
   @Column(nullable = false)
   private String password;
 
+  @Column(name = "allocated_space", nullable = false)
+  private Long allocatedSpace = 30 * 1024 * 1024 * 1024L;
+
+  @Column(name = "used_space", nullable = false)
+  private Long usedSpace = 0L;
+
   @Builder
   public Member(String email, String password) {
     this.email = email;

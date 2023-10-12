@@ -3,6 +3,7 @@ package io.jaeyeon.numblemybox.member.controller;
 import io.jaeyeon.numblemybox.annotation.AuthenticationRequired;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.service.LoginService;
 import io.jaeyeon.numblemybox.member.service.MemberService;
 import jakarta.validation.Valid;
@@ -59,5 +60,13 @@ public class MemberController {
   public ResponseEntity<Void> logout() {
     loginService.logout();
     return ResponseEntity.status(HttpStatus.OK).build();
+  }
+
+  @AuthenticationRequired
+  @GetMapping("/storage")
+  public ResponseEntity<StorageInfo> getStorageInfo() {
+    Long memberId = loginService.getLoginMemberId();
+    StorageInfo storageInfo = memberService.getStorageInfo(memberId);
+    return ResponseEntity.ok(storageInfo);
   }
 }
