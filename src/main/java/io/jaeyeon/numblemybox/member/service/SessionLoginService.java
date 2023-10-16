@@ -1,9 +1,12 @@
 package io.jaeyeon.numblemybox.member.service;
 
+import org.springframework.stereotype.Service;
+
+import io.jaeyeon.numblemybox.exception.ErrorCode;
+import io.jaeyeon.numblemybox.exception.UnAuthenticatedAccessException;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -26,11 +29,18 @@ public class SessionLoginService implements LoginService {
   @Override
   public Member getLoginMember() {
     Long memberId = (Long) httpSession.getAttribute(MEMBER_ID);
+    if (memberId == null) {
+      throw new UnAuthenticatedAccessException(ErrorCode.UNAUTHENTICATED_ACCESS);
+    }
     return memberService.findMemberById(memberId);
   }
 
   @Override
   public Long getLoginMemberId() {
-    return (Long) httpSession.getAttribute(MEMBER_ID);
+    Long memberId = (Long) httpSession.getAttribute(MEMBER_ID);
+    if (memberId == null) {
+      throw new UnAuthenticatedAccessException(ErrorCode.UNAUTHENTICATED_ACCESS);
+    }
+    return memberId;
   }
 }
