@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class FileLocalServiceImpl implements FileService {
 	private String folderPath;
 
 	private final FileEntityRepository filesRepository;
+	private final ResourceLoader resourceLeader;
 
 	@Override
 	public UploadFileResponse upload(MultipartFile file, Member owner) throws IOException {
@@ -45,10 +47,9 @@ public class FileLocalServiceImpl implements FileService {
 		String encoderFilename = URLEncoder.encode(originalFilename, StandardCharsets.UTF_8);
 		String filePath = Paths.get(folderPath, encoderFilename).toString();
 		try{
-
 			// DB에 파일 정보를 저장
 			try {
-				FileEntity files = filesRepository.save(
+				filesRepository.save(
 						FileEntity.builder()
 								.fileName(originalFilename)
 								.fileType(file.getContentType()) // 파일의 MIME 타입을 설정
@@ -90,7 +91,7 @@ public class FileLocalServiceImpl implements FileService {
 
 		try {
 			// 파일에 대한 리소스 객체를 생성
-			UrlResource resource = new UrlResource(filePath.toUri());
+			UrlResource resource = (UrlResource) resourceLeader.getResource("file: " + filePath.toUri());
 			// 파일이 존재하지 않는 경우 예외를 발생
 			if (!resource.exists()) {
 				throw new FileNotFoundException(ErrorCode.FILE_NOT_FOUND);
