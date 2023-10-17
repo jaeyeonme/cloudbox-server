@@ -1,4 +1,4 @@
-package io.jaeyeon.numblemybox.member.dto;
+package io.jaeyeon.numblemybox.folder.dto;
 
 public record StorageInfo(double allocatedSpace, double usedSpace) {
   public StorageInfo(long allocatedSpaceBytes, long usedSpaceBytes) {

@@ -3,11 +3,11 @@ package io.jaeyeon.numblemybox.member;
 import static org.mockito.BDDMockito.*;
 
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import io.jaeyeon.numblemybox.member.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.service.GeneralMemberService;
 import java.util.Optional;
 import org.junit.jupiter.api.Assertions;

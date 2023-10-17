@@ -1,9 +1,9 @@
 package io.jaeyeon.numblemybox.member.controller;
 
 import io.jaeyeon.numblemybox.annotation.AuthenticationRequired;
+import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import io.jaeyeon.numblemybox.member.dto.StorageInfo;
 import io.jaeyeon.numblemybox.member.service.LoginService;
 import io.jaeyeon.numblemybox.member.service.MemberService;
 import jakarta.validation.Valid;

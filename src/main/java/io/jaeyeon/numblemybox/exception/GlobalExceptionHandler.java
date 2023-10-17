@@ -68,4 +68,13 @@ public class GlobalExceptionHandler {
         ErrorResponse.of(HttpStatus.BAD_REQUEST.toString(), e.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
   }
+
+  /** 파일 저장 및 데이터베이스 예외 처리 */
+  @ExceptionHandler(value = {FileStorageException.class, FileDatabaseException.class})
+  protected ResponseEntity<ErrorResponse> handleFileExceptions(RuntimeException e) {
+    log.error("File exception", e);
+    ErrorResponse errorResponse =
+        ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR.toString(), e.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+  }
 }
