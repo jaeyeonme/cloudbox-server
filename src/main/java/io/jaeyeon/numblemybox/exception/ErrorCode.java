@@ -1,7 +1,8 @@
 package io.jaeyeon.numblemybox.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
@@ -23,6 +24,11 @@ public enum ErrorCode {
   FILE_TYPE_ERROR(HttpStatus.BAD_REQUEST, "F-005", "지원하지 않는 파일 형식입니다."),
   FILE_TYPE_DETERMINATION_FAILED(HttpStatus.BAD_REQUEST, "F-006", "파일 MIME 타입 결정에 실패했습니다."),
   ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "F-007", "접근이 거부되었습니다."),
+  FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "F-008", "파일 업로드에 실패했습니다."),
+
+  /** Folder */
+  FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
+  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다.")
   ;
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
