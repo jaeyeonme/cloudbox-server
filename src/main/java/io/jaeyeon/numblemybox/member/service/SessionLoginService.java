@@ -1,12 +1,11 @@
 package io.jaeyeon.numblemybox.member.service;
 
-import org.springframework.stereotype.Service;
-
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.UnAuthenticatedAccessException;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor

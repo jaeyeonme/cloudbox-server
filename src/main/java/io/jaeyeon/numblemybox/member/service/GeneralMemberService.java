@@ -1,11 +1,5 @@
 package io.jaeyeon.numblemybox.member.service;
 
-import java.io.File;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.NumbleMyBoxException;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
@@ -15,7 +9,11 @@ import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import java.io.File;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional

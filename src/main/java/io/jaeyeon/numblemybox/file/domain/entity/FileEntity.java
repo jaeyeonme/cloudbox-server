@@ -22,7 +22,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FileEntity {
 
-  @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "FILE_ID")
   private Long id;
 
@@ -50,7 +51,8 @@ public class FileEntity {
   private Folder parentFolder;
 
   @Builder
-  public FileEntity(String fileName, Long size, String path, String fileType, Member owner, Folder parentFolder) {
+  public FileEntity(
+      String fileName, Long size, String path, String fileType, Member owner, Folder parentFolder) {
     this.fileName = fileName;
     this.size = size;
     this.path = path;

@@ -1,7 +1,7 @@
 package io.jaeyeon.numblemybox.exception;
 
 public class FileStorageException extends NumbleMyBoxException {
-	public FileStorageException(ErrorCode errorCode) {
-		super(errorCode);
-	}
+  public FileStorageException(ErrorCode errorCode) {
+    super(errorCode);
+  }
 }
