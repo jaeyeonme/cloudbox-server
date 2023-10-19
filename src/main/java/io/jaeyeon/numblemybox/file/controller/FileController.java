@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,9 +31,14 @@ public class FileController {
 
   @PostMapping("/upload")
   public ResponseEntity<UploadFileResponse> uploadFile(
-      @RequestPart("file") MultipartFile file, @CurrentMember Member currentMember)
+      @RequestPart("file") MultipartFile file,
+      @RequestPart(value = "folderId", required = false) Long folderId,
+      @RequestParam(value = "rootFolderName", required = false, defaultValue = "Root")
+          String rootFolderName,
+      @CurrentMember Member currentMember)
       throws IOException {
-    UploadFileResponse uploadFileResponse = fileService.upload(file, currentMember);
+    UploadFileResponse uploadFileResponse =
+        fileService.upload(file, folderId, rootFolderName, currentMember);
     return ResponseEntity.status(HttpStatus.OK).body(uploadFileResponse);
   }
 

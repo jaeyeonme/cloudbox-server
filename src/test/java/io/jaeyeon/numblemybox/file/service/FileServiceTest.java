@@ -1,17 +1,17 @@
 package io.jaeyeon.numblemybox.file.service;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.hamcrest.MatcherAssert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.BDDMockito.any;
-import static org.springframework.test.util.AssertionErrors.*;
 
+import io.jaeyeon.numblemybox.common.FileUtility;
+import io.jaeyeon.numblemybox.common.UUIDUtils;
 import io.jaeyeon.numblemybox.file.domain.entity.FileEntity;
 import io.jaeyeon.numblemybox.file.domain.repository.FileEntityRepository;
 import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.fixture.MemberFixture;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
+import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,9 +21,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.UrlResource;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,22 +28,36 @@ class FileServiceTest {
 
   @InjectMocks private FileLocalServiceImpl fileLocalService;
 
-  @Mock FileEntityRepository fileEntityRepository;
+  @Mock private FileEntityRepository fileEntityRepository;
+
+  @Mock private FolderRepository folderRepository;
+
+  @Mock private DirectoryCreator directoryCreator;
+
+  @Mock private UUIDUtils uuidUtils;
+
+  @Mock private FileUtility fileUtility;
 
   @Mock private MultipartFile multipartFile;
 
-  @Mock private ResourceLoader resourceLoader;
-
   private FileEntity fileEntity;
+  private Folder folder;
 
   @BeforeEach
-  void setUp() {
-    ReflectionTestUtils.setField(fileLocalService, "folderPath", "/path/to/file");
-
+  void setUp() throws IOException {
     // MultipartFile 모킹
     lenient().when(multipartFile.getOriginalFilename()).thenReturn("testFile.txt");
     lenient().when(multipartFile.getContentType()).thenReturn("text/plain");
     lenient().when(multipartFile.getSize()).thenReturn(100L);
+    lenient().when(fileUtility.exists(any())).thenReturn(true);
+    lenient().when(fileUtility.probeContentType(any())).thenReturn("text/plain");
+
+    folder =
+        Folder.builder().name("ROOT").path("/path/to/file").owner(MemberFixture.MEMBER1).build();
+    // findByNameAndOwner 메서드가 가짜 루트 폴더 객체를 반환하도록 설정
+    lenient()
+        .when(folderRepository.findByNameAndOwner(anyString(), any()))
+        .thenReturn(Optional.of(folder));
 
     fileEntity =
         FileEntity.builder()
@@ -62,39 +73,35 @@ class FileServiceTest {
   @DisplayName("파일 업로드 테스트")
   void testUpload() throws Exception {
     // given
-    given(fileEntityRepository.save(any())).willReturn(fileEntity);
+    String uuid = "random-uuid";
+    lenient().when(uuidUtils.getUUID()).thenReturn(uuid);
+    lenient().when(multipartFile.getOriginalFilename()).thenReturn("testFile.txt");
+    lenient().when(multipartFile.getContentType()).thenReturn("text/plain");
+    lenient().when(multipartFile.getSize()).thenReturn(100L);
 
     // when
-    UploadFileResponse uploadFileResponse =
-        fileLocalService.upload(multipartFile, MemberFixture.MEMBER1);
+    UploadFileResponse response =
+        fileLocalService.upload(multipartFile, null, "ROOT", MemberFixture.MEMBER1);
 
     // then
-    assertEquals("testFile.txt", uploadFileResponse.fileName(), "testFile.txt");
-    assertEquals(
-        "/path/to/file/testFile.txt",
-        uploadFileResponse.fileDownloadUri(),
-        "/path/to/file/testFile.txt");
-    assertEquals("text/plain", uploadFileResponse.fileType(), "text/plain");
+    assertThat(response.fileName()).isEqualTo("testFile.txt");
+    assertThat(response.fileDownloadUri()).isEqualTo("/path/to/file/random-uuid.txt");
+    assertThat(response.fileType()).isEqualTo("text/plain");
+    assertThat(response.size()).isEqualTo(100L);
   }
 
   @Test
   @DisplayName("파일 다운로드 테스트")
   void testDownload() throws Exception {
     // given
-    String encodedFileName = URLEncoder.encode(fileEntity.getFileName(), StandardCharsets.UTF_8);
-    given(fileEntityRepository.findByFileName(anyString())).willReturn(Optional.of(fileEntity));
-
-    UrlResource mockedResource = mock(UrlResource.class); // UrlResource 모킹
-    given(mockedResource.exists()).willReturn(true);
-    given(mockedResource.getFilename()).willReturn(encodedFileName);
-    given(resourceLoader.getResource(anyString()))
-        .willReturn(mockedResource); // getResource 메서드 호출 시 모킹된 UrlResource 객체를 반환하도록 설정
+    lenient()
+        .when(fileEntityRepository.findByFileName(anyString()))
+        .thenReturn(Optional.of(fileEntity));
 
     // when
-    Resource resource = fileLocalService.downloadFile(encodedFileName, MemberFixture.MEMBER1);
+    Resource resource = fileLocalService.downloadFile("testFile.txt", MemberFixture.MEMBER1);
 
     // then
-    assertThat(resource, is(notNullValue()));
-    assertEquals(encodedFileName, resource.getFilename(), "testFile.txt");
+    assertThat(resource).isNotNull();
   }
 }
