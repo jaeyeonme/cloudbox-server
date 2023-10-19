@@ -1,8 +1,7 @@
 package io.jaeyeon.numblemybox.exception;
 
-import org.springframework.http.HttpStatus;
-
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 public enum ErrorCode {
@@ -28,8 +27,7 @@ public enum ErrorCode {
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
-  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다.")
-  ;
+  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다.");
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;

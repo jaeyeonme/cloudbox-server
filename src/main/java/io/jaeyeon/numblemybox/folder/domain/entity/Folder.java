@@ -1,6 +1,8 @@
 package io.jaeyeon.numblemybox.folder.domain.entity;
 
+import io.jaeyeon.numblemybox.file.domain.entity.FileEntity;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,7 +11,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,11 +45,21 @@ public class Folder {
   @JoinColumn(name = "PARENT_FOLDER_ID")
   private Folder parentFolder;
 
+  @OneToMany(mappedBy = "parentFolder", cascade = CascadeType.ALL)
+  private List<FileEntity> files = new ArrayList<>();
+
+  @OneToMany(mappedBy = "parentFolder")
+  private List<Folder> subFolders = new ArrayList<>();
+
   @Builder
   public Folder(String name, String path, Member owner, Folder parentFolder) {
     this.name = name;
     this.path = path;
     this.owner = owner;
     this.parentFolder = parentFolder;
+  }
+
+  public boolean isOwnedBy(Member member) {
+    return this.owner.equals(member);
   }
 }

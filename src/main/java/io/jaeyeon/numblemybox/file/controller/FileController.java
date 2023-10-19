@@ -1,9 +1,13 @@
 package io.jaeyeon.numblemybox.file.controller;
 
+import io.jaeyeon.numblemybox.annotation.CurrentMember;
+import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
+import io.jaeyeon.numblemybox.file.service.FileService;
+import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -18,12 +22,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.jaeyeon.numblemybox.annotation.CurrentMember;
-import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
-import io.jaeyeon.numblemybox.file.service.FileService;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
-import lombok.RequiredArgsConstructor;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/files")
@@ -33,11 +31,14 @@ public class FileController {
 
   @PostMapping("/upload")
   public ResponseEntity<UploadFileResponse> uploadFile(
-          @RequestPart("file") MultipartFile file,
-          @RequestPart(value = "folderId", required = false) Long folderId,
-          @RequestParam(value = "rootFolderName", required = false, defaultValue = "Root") String rootFolderName,
-          @CurrentMember Member currentMember) throws IOException {
-    UploadFileResponse uploadFileResponse = fileService.upload(file, folderId, rootFolderName, currentMember);
+      @RequestPart("file") MultipartFile file,
+      @RequestPart(value = "folderId", required = false) Long folderId,
+      @RequestParam(value = "rootFolderName", required = false, defaultValue = "Root")
+          String rootFolderName,
+      @CurrentMember Member currentMember)
+      throws IOException {
+    UploadFileResponse uploadFileResponse =
+        fileService.upload(file, folderId, rootFolderName, currentMember);
     return ResponseEntity.status(HttpStatus.OK).body(uploadFileResponse);
   }
 
