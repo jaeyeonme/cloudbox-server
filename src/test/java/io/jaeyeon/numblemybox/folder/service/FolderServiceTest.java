@@ -3,6 +3,12 @@ package io.jaeyeon.numblemybox.folder.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.jaeyeon.numblemybox.common.FileUtility;
+import io.jaeyeon.numblemybox.file.domain.entity.FileEntity;
+import io.jaeyeon.numblemybox.fixture.MemberFixture;
+import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
+import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -11,7 +17,6 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.zip.ZipOutputStream;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,13 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.test.util.ReflectionTestUtils;
-
-import io.jaeyeon.numblemybox.common.FileUtility;
-import io.jaeyeon.numblemybox.file.domain.entity.FileEntity;
-import io.jaeyeon.numblemybox.fixture.MemberFixture;
-import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
-import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
 
 @ExtendWith(MockitoExtension.class)
 public class FolderServiceTest {
@@ -68,10 +66,7 @@ public class FolderServiceTest {
     when(fileUtility.createZipOutputStream(any())).thenReturn(mockZipOutputStream);
     // 기대하는 경로를 절대 경로로 변경
     String expectedPath =
-        "file:"
-            + Paths.get("./path/to/storage/1/1_testFile.txt.zip")
-                .toAbsolutePath()
-                .normalize();
+        "file:" + Paths.get("./path/to/storage/1/1_testFile.txt.zip").toAbsolutePath().normalize();
     when(resource.getURI()).thenReturn(URI.create(expectedPath));
     when(mockInputStream.read(any())).thenReturn(-1);
   }
