@@ -1,7 +1,8 @@
 package io.jaeyeon.numblemybox.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
@@ -27,7 +28,11 @@ public enum ErrorCode {
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
-  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다.");
+  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다."),
+
+  /** Storage */
+  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
+  DUPLICATE_FILE_NAME(HttpStatus.BAD_REQUEST, "S-002", "파일 이름이 중복됩니다.");
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;

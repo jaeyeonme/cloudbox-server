@@ -1,5 +1,18 @@
 package io.jaeyeon.numblemybox.file.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import io.jaeyeon.numblemybox.common.FileUtility;
 import io.jaeyeon.numblemybox.common.UUIDUtils;
 import io.jaeyeon.numblemybox.exception.AccessDeniedException;
@@ -14,19 +27,8 @@ import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
-import java.io.File;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -65,6 +67,10 @@ public class FileLocalServiceImpl implements FileService {
     directoryCreator.createDirectoryIfNotExists(targetFolderPath);
 
     String filePath = Paths.get(targetFolderPath, newFileName).toString();
+
+    if (isDuplicateName(targetFolderPath, newFileName, owner.getId())) {
+      throw new FileServiceException(ErrorCode.DUPLICATE_FILE_NAME);
+    }
 
     try {
       // DB에 파일 정보를 저장
@@ -143,5 +149,11 @@ public class FileLocalServiceImpl implements FileService {
       log.error("Failed to download file: {}", fileName, e);
       throw new FileServiceException(ErrorCode.FILE_DOWNLOAD_FAILED);
     }
+  }
+
+  private boolean isDuplicateName(String path, String name, Long memberId) {
+    Folder existingFolder = folderRepository.findByPathAndName(path, name, memberId);
+    FileEntity existingFile = filesRepository.findByPathAndFileName(path, name, memberId);
+    return existingFolder != null || existingFile != null;
   }
 }

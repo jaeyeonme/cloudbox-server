@@ -1,5 +1,9 @@
 package io.jaeyeon.numblemybox.member.domain.entity;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import io.jaeyeon.numblemybox.exception.ErrorCode;
+import io.jaeyeon.numblemybox.exception.StorageLimitExceededException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,7 +15,6 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Getter
@@ -52,10 +55,20 @@ public class Member {
   }
 
   public void increaseUsedSpace(Long size) {
+    if (this.usedSpace + size > this.allocatedSpace) {
+      throw new StorageLimitExceededException(ErrorCode.STORAGE_LIMIT_EXCEEDED);
+    }
     this.usedSpace += size;
   }
 
   public void decreaseUsedSpace(Long size) {
     this.usedSpace -= size;
+    if (this.usedSpace < 0) {
+      this.usedSpace = 0L;
+    }
+  }
+
+  public Long getAvailableSpace() {
+    return this.allocatedSpace - this.usedSpace;
   }
 }
