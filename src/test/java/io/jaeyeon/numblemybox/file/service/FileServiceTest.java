@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,6 +51,7 @@ class FileServiceTest {
     lenient().when(multipartFile.getSize()).thenReturn(100L);
     lenient().when(fileUtility.exists(any())).thenReturn(true);
     lenient().when(fileUtility.probeContentType(any())).thenReturn("text/plain");
+    ReflectionTestUtils.setField(fileLocalService, "folderPath", "./path/to/storage");
 
     folder =
         Folder.builder().name("ROOT").path("/path/to/file").owner(MemberFixture.MEMBER1).build();
@@ -85,7 +87,7 @@ class FileServiceTest {
 
     // when
     UploadFileResponse response =
-        fileLocalService.upload(multipartFile, null, "ROOT", MemberFixture.MEMBER1);
+        fileLocalService.upload(multipartFile, null, MemberFixture.MEMBER1);
 
     // then
     assertThat(response.fileName()).isEqualTo("testFile.txt");

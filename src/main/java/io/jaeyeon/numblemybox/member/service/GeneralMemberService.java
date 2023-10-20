@@ -9,8 +9,8 @@ import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import java.io.File;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @RequiredArgsConstructor
 public class GeneralMemberService implements MemberService {
+
+  @Value("${file.storage-directory}")
+  private String baseFolderPath;
 
   private final MemberRepository memberRepository;
   private final FolderRepository folderRepository;
@@ -72,9 +75,9 @@ public class GeneralMemberService implements MemberService {
   @Override
   public void createRootFolderAndSetInitialSpace(Member member) {
     // ROOT 폴더 생성
-    String rootFolderPath = new File(".").getAbsolutePath() + "/storage/" + member.getId();
+    String rootFolderPath = baseFolderPath + "/" + member.getRootFolderId();
     Folder rootFolder =
-        Folder.builder().name(member.getEmail()).path(rootFolderPath).owner(member).build();
+        Folder.builder().name(member.getRootFolderId()).path(rootFolderPath).owner(member).build();
     folderRepository.save(rootFolder);
   }
 

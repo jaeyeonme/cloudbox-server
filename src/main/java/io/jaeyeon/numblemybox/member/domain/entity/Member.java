@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -39,10 +40,14 @@ public class Member {
   @Column(name = "used_space", nullable = false)
   private Long usedSpace = 0L;
 
+  @Column(name = "root_folder_id", unique = true, nullable = false)
+  private String rootFolderId;
+
   @Builder
   public Member(String email, String password) {
     this.email = email;
     this.password = password;
+    this.rootFolderId = UUID.randomUUID().toString();
   }
 
   public boolean isPasswordMatching(String rawPassword, PasswordEncoder passwordEncoder) {
