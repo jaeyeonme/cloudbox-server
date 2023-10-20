@@ -1,18 +1,5 @@
 package io.jaeyeon.numblemybox.file.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
 import io.jaeyeon.numblemybox.common.FileUtility;
 import io.jaeyeon.numblemybox.common.UUIDUtils;
 import io.jaeyeon.numblemybox.exception.AccessDeniedException;
@@ -27,8 +14,19 @@ import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import java.io.File;
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -38,90 +36,75 @@ public class FileLocalServiceImpl implements FileService {
 
   private final FileEntityRepository filesRepository;
   private final FolderRepository folderRepository;
-  private final DirectoryCreator directoryCreator;
-  private final UUIDUtils uuidUtils;
   private final FileUtility fileUtility;
+  private final UUIDUtils uuidUtils;
 
   @Override
   public UploadFileResponse upload(
       MultipartFile file, Long folderId, String rootFolderName, Member owner) throws IOException {
+    // 업로드 된 파일의 원래 이름을 가져온다.
     String originalFilename = file.getOriginalFilename();
-    String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
+    // 파일 확장자를 추출한다.
+    String extension = fileUtility.extractFileExtension(originalFilename);
+    // 새로운 파일 이름을 UUID를 통해 가져온다.
     String newFileName = uuidUtils.getUUID() + "." + extension;
 
-    Folder targetFolder;
-    if (folderId != null) {
-      // folderId 값이 제공되면 해당 폴더에 파일을 업로드
-      targetFolder =
-          folderRepository
-              .findById(folderId)
-              .orElseThrow(() -> new FileNotFoundException(ErrorCode.FOLDER_NOT_FOUND));
-    } else {
-      // folderId 값이 null이면 루트 폴더 또는 기본 폴더에 파일을 업로드
-      // 여기에서는 예시로 루트 폴더 경로를 사용
-      targetFolder = findOrCreateRootFolder(owner, rootFolderName);
-    }
-
+    // 업로드 대상 폴더를 결정한다.
+    Folder targetFolder =
+        (folderId != null)
+            ? folderRepository
+                .findById(folderId)
+                .orElseThrow(() -> new FileNotFoundException(ErrorCode.FOLDER_NOT_FOUND))
+            : findRootFolderOrThrow(owner, rootFolderName);
+    // 대상 폴더의 경로를 가져온다.
     String targetFolderPath = targetFolder.getPath();
-    // 디렉토리 생성 로직 호출
-    directoryCreator.createDirectoryIfNotExists(targetFolderPath);
-
-    String filePath = Paths.get(targetFolderPath, newFileName).toString();
-
+    // 폴더가 존재하지 않으면 생성한다.
+    fileUtility.createDirectoryIfNotExists(targetFolderPath);
+    // 최종적으로 저장될 파일의 경로를 생성한다.
+    String filePath = fileUtility.createFilePath(targetFolderPath, newFileName);
+    // 같은 이름의 파일이 이미 존재하는지 확인한다.
     if (isDuplicateName(targetFolderPath, newFileName, owner.getId())) {
       throw new FileServiceException(ErrorCode.DUPLICATE_FILE_NAME);
     }
+    // 업로드 될 파일의 크기를 체크하며 사용 간으한 공간을 초과하는지 확인
+    long uploadFileZie = file.getSize();
+    if (uploadFileZie > owner.getAvailableSpace()) {
+      throw new FileServiceException(ErrorCode.STORAGE_LIMIT_EXCEEDED);
+    }
 
     try {
-      // DB에 파일 정보를 저장
       filesRepository.save(
           FileEntity.builder()
               .fileName(originalFilename)
-              .fileType(file.getContentType()) // 파일의 MIME 타입을 설정
-              .size(file.getSize()) // 파일 크기를 설정
-              .path(filePath) // 파일 경로를 설정
-              .owner(owner) // 유저지정
-              .parentFolder(targetFolder) // parentFolder 속성을 설정
+              .fileType(file.getContentType())
+              .size(file.getSize())
+              .path(filePath)
+              .owner(owner)
+              .parentFolder(targetFolder)
               .build());
-
-      // 파일 시스템에 파일을 저장
+      // 사용자의 공간을 증가시킨다.
+      owner.increaseUsedSpace(uploadFileZie);
       file.transferTo(new File(filePath));
 
-      // 응답 객체를 생성하여 반환
-      UploadFileResponse response =
-          new UploadFileResponse(originalFilename, filePath, file.getContentType(), file.getSize());
-      log.info("File uploaded successfully: {}", originalFilename);
-      return response;
-
+      return new UploadFileResponse(
+          originalFilename, filePath, file.getContentType(), file.getSize());
     } catch (Exception e) {
       log.error("Failed to upload file: {}", originalFilename, e);
       throw new FileServiceException(ErrorCode.FILE_UPLOAD_FAILED);
     }
   }
 
-  private Folder findOrCreateRootFolder(Member owner, String rootFolderName) {
-    return folderRepository
-        .findByNameAndOwner(rootFolderName, owner)
-        .orElseThrow(
-            () -> {
-              // 루트 폴더가 존재하지 않는 경우 새로운 예외를 생성하고 발생
-              return new NoSuchElementException(ErrorCode.FOLDER_NOT_FOUND);
-            });
-  }
-
   @Override
   public Resource downloadFile(String encodedFileName, Member owner) throws IOException {
-    // URL 디코딩 과정 추가
+    // 인코딩 된 파일 이름을 디코딩
     String fileName = URLDecoder.decode(encodedFileName, StandardCharsets.UTF_8);
-
-    // DB에서 fileName으로 FileEntity 객체를 찾아온다
     FileEntity fileEntity =
         filesRepository
             .findByFileName(fileName)
             .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
-    String filePathStr = fileEntity.getPath(); // 실제 저장된 경로와 이름을 가져온다
-
+    String filePathStr = fileEntity.getPath();
+    // 파일을 읽어 리소스로 반환한다.
     try {
       Path filePath = Paths.get(filePathStr).normalize();
       if (!fileUtility.exists(filePath)) {
@@ -129,20 +112,15 @@ public class FileLocalServiceImpl implements FileService {
       }
 
       Resource resource = new UrlResource(filePath.toUri());
-
-      log.info("FileEntity owner: {}", fileEntity.getOwner());
-      log.info("Current owner: {}", owner);
+      // 파일 소유자인지 확인
       if (!fileEntity.isOwnedBy(owner)) {
         throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
       }
-
+      // 파일의 타입을 결정
       String contentType = fileUtility.probeContentType(filePath);
-
       if (contentType == null) {
         throw new FileStorageException(ErrorCode.FILE_TYPE_DETERMINATION_FAILED);
       }
-
-      log.info("File downloaded successfully: {}", fileName);
 
       return resource;
     } catch (IOException e) {
@@ -151,9 +129,38 @@ public class FileLocalServiceImpl implements FileService {
     }
   }
 
+  @Override
+  public void deleteFile(Long fileId, Member member) {
+    FileEntity fileEntity =
+        filesRepository
+            .findById(fileId)
+            .orElseThrow(() -> new FileServiceException(ErrorCode.FILE_NOT_FOUND));
+    // 파일 소유자를 확인
+    if (!fileEntity.isOwnedBy(member)) {
+      throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+    }
+
+    Long fileSize = fileEntity.getSize();
+
+    try {
+      fileUtility.deleteFile(Paths.get(fileEntity.getPath()));
+      // 사용자의 사용 공간을 감소
+      member.decreaseUsedSpace(fileSize);
+      filesRepository.delete(fileEntity);
+    } catch (Exception e) {
+      log.error("Failed to delete file: {}", fileEntity.getFileName(), e);
+      throw new FileServiceException(ErrorCode.FILE_DELETE_FAILED);
+    }
+  }
+
+  private Folder findRootFolderOrThrow(Member owner, String rootFolderName) {
+    return folderRepository
+        .findByNameAndOwner(rootFolderName, owner)
+        .orElseThrow(() -> new NoSuchElementException(ErrorCode.FOLDER_NOT_FOUND));
+  }
+
   private boolean isDuplicateName(String path, String name, Long memberId) {
-    Folder existingFolder = folderRepository.findByPathAndName(path, name, memberId);
-    FileEntity existingFile = filesRepository.findByPathAndFileName(path, name, memberId);
-    return existingFolder != null || existingFile != null;
+    int count = folderRepository.countByPathAndNameOrFileName(path, name, memberId);
+    return count > 0;
   }
 }

@@ -1,7 +1,5 @@
 package io.jaeyeon.numblemybox.member.domain.entity;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.StorageLimitExceededException;
 import jakarta.persistence.Column;
@@ -15,6 +13,7 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Getter

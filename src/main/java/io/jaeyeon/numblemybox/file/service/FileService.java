@@ -12,5 +12,8 @@ public interface FileService {
       throws IOException;
 
   /* 파일 다운로드 */
-  Resource downloadFile(String fileName, Member member) throws IOException;
+  Resource downloadFile(String encodedFileName, Member owner) throws IOException;
+
+  /* 파일 삭제 */
+  void deleteFile(Long fileId, Member member);
 }

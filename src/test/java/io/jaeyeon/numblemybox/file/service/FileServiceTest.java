@@ -11,6 +11,7 @@ import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.fixture.MemberFixture;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +32,6 @@ class FileServiceTest {
   @Mock private FileEntityRepository fileEntityRepository;
 
   @Mock private FolderRepository folderRepository;
-
-  @Mock private DirectoryCreator directoryCreator;
 
   @Mock private UUIDUtils uuidUtils;
 
@@ -78,6 +77,11 @@ class FileServiceTest {
     lenient().when(multipartFile.getOriginalFilename()).thenReturn("testFile.txt");
     lenient().when(multipartFile.getContentType()).thenReturn("text/plain");
     lenient().when(multipartFile.getSize()).thenReturn(100L);
+    lenient()
+        .when(fileUtility.createFilePath(anyString(), anyString()))
+        .thenReturn("/some/mock/path.txt");
+    // 실제 파일 저장을 피하기 위한 모킹
+    doNothing().when(multipartFile).transferTo(any(File.class));
 
     // when
     UploadFileResponse response =
@@ -85,7 +89,7 @@ class FileServiceTest {
 
     // then
     assertThat(response.fileName()).isEqualTo("testFile.txt");
-    assertThat(response.fileDownloadUri()).isEqualTo("/path/to/file/random-uuid.txt");
+    assertThat(response.fileDownloadUri()).isEqualTo("/some/mock/path.txt");
     assertThat(response.fileType()).isEqualTo("text/plain");
     assertThat(response.size()).isEqualTo(100L);
   }
