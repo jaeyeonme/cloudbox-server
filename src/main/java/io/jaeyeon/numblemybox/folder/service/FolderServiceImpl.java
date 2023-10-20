@@ -4,6 +4,7 @@ import io.jaeyeon.numblemybox.common.FileUtility;
 import io.jaeyeon.numblemybox.exception.AccessDeniedException;
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.FileNotFoundException;
+import io.jaeyeon.numblemybox.exception.FileProcessingException;
 import io.jaeyeon.numblemybox.file.domain.entity.FileEntity;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
@@ -93,20 +94,22 @@ public class FolderServiceImpl implements FolderService {
     // 현재 폴더의 모든 파일을 압축 파일에 추가
     for (FileEntity file : folder.getFiles()) {
       // 각 파일을 ZIP 파일에 추가
-      addFileToZip(file.getPath(), zos);
+      String absoluteFilePath = file.getPath();
+      addFileToZip(absoluteFilePath, zos);
     }
   }
 
-  private void addFileToZip(String filePathStr, ZipOutputStream zos) throws IOException {
+  private void addFileToZip(String fileFullPath, ZipOutputStream zos) throws IOException {
+    log.info("Adding file to zip: {}", fileFullPath);
     if (zos == null) {
       throw new IllegalArgumentException("ZipOutputStream cannot be null");
     }
 
-    // 파일 경로 생성
-    Path filePath = Paths.get(filePathStr);
+    // 파일의 전체 경로 생성
+    Path filePath = Paths.get(fileFullPath);
 
     try (InputStream fis = fileUtility.newInputStream(filePath)) {
-      ZipEntry zipEntry = new ZipEntry(filePathStr);
+      ZipEntry zipEntry = new ZipEntry(fileFullPath);
       zos.putNextEntry(zipEntry);
 
       // 버퍼 생성
@@ -116,6 +119,9 @@ public class FolderServiceImpl implements FolderService {
         zos.write(bytes, 0, length);
       }
       zos.closeEntry();
+    } catch (IOException e) {
+      log.error("Failed to add file to zip: {}", fileFullPath, e);
+      throw new FileProcessingException(ErrorCode.FILE_PROCESSING_FAILED);
     }
   }
 }

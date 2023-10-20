@@ -11,6 +11,7 @@ import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.fixture.MemberFixture;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
 import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,8 +33,6 @@ class FileServiceTest {
   @Mock private FileEntityRepository fileEntityRepository;
 
   @Mock private FolderRepository folderRepository;
-
-  @Mock private DirectoryCreator directoryCreator;
 
   @Mock private UUIDUtils uuidUtils;
 
@@ -51,6 +51,7 @@ class FileServiceTest {
     lenient().when(multipartFile.getSize()).thenReturn(100L);
     lenient().when(fileUtility.exists(any())).thenReturn(true);
     lenient().when(fileUtility.probeContentType(any())).thenReturn("text/plain");
+    ReflectionTestUtils.setField(fileLocalService, "folderPath", "./path/to/storage");
 
     folder =
         Folder.builder().name("ROOT").path("/path/to/file").owner(MemberFixture.MEMBER1).build();
@@ -78,14 +79,19 @@ class FileServiceTest {
     lenient().when(multipartFile.getOriginalFilename()).thenReturn("testFile.txt");
     lenient().when(multipartFile.getContentType()).thenReturn("text/plain");
     lenient().when(multipartFile.getSize()).thenReturn(100L);
+    lenient()
+        .when(fileUtility.createFilePath(anyString(), anyString()))
+        .thenReturn("/some/mock/path.txt");
+    // 실제 파일 저장을 피하기 위한 모킹
+    doNothing().when(multipartFile).transferTo(any(File.class));
 
     // when
     UploadFileResponse response =
-        fileLocalService.upload(multipartFile, null, "ROOT", MemberFixture.MEMBER1);
+        fileLocalService.upload(multipartFile, null, MemberFixture.MEMBER1);
 
     // then
     assertThat(response.fileName()).isEqualTo("testFile.txt");
-    assertThat(response.fileDownloadUri()).isEqualTo("/path/to/file/random-uuid.txt");
+    assertThat(response.fileDownloadUri()).isEqualTo("/some/mock/path.txt");
     assertThat(response.fileType()).isEqualTo("text/plain");
     assertThat(response.size()).isEqualTo(100L);
   }

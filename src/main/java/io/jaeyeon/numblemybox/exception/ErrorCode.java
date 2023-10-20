@@ -24,10 +24,17 @@ public enum ErrorCode {
   FILE_TYPE_DETERMINATION_FAILED(HttpStatus.BAD_REQUEST, "F-006", "파일 MIME 타입 결정에 실패했습니다."),
   ACCESS_DENIED(HttpStatus.UNAUTHORIZED, "F-007", "접근이 거부되었습니다."),
   FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "F-008", "파일 업로드에 실패했습니다."),
+  DUPLICATE_FILE_NAME(HttpStatus.BAD_REQUEST, "F-009", "파일 이름이 중복됩니다."),
+  FILE_DELETE_FAILED(HttpStatus.BAD_REQUEST, "F-010", "파일 삭제에 실패했습니다."),
+  FILE_PROCESSING_FAILED(HttpStatus.BAD_REQUEST, "F-011", "파일 처리에 실패했습니다."),
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
-  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다.");
+  DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다."),
+
+  /** Storage */
+  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
+  ;
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;

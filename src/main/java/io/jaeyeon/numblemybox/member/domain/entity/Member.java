@@ -1,11 +1,14 @@
 package io.jaeyeon.numblemybox.member.domain.entity;
 
+import io.jaeyeon.numblemybox.exception.ErrorCode;
+import io.jaeyeon.numblemybox.exception.StorageLimitExceededException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -37,10 +40,14 @@ public class Member {
   @Column(name = "used_space", nullable = false)
   private Long usedSpace = 0L;
 
+  @Column(name = "root_folder_id", unique = true, nullable = false)
+  private String rootFolderId;
+
   @Builder
   public Member(String email, String password) {
     this.email = email;
     this.password = password;
+    this.rootFolderId = UUID.randomUUID().toString();
   }
 
   public boolean isPasswordMatching(String rawPassword, PasswordEncoder passwordEncoder) {
@@ -52,10 +59,20 @@ public class Member {
   }
 
   public void increaseUsedSpace(Long size) {
+    if (this.usedSpace + size > this.allocatedSpace) {
+      throw new StorageLimitExceededException(ErrorCode.STORAGE_LIMIT_EXCEEDED);
+    }
     this.usedSpace += size;
   }
 
   public void decreaseUsedSpace(Long size) {
     this.usedSpace -= size;
+    if (this.usedSpace < 0) {
+      this.usedSpace = 0L;
+    }
+  }
+
+  public Long getAvailableSpace() {
+    return this.allocatedSpace - this.usedSpace;
   }
 }

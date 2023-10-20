@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -34,114 +35,156 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class FileLocalServiceImpl implements FileService {
 
+  @Value("${file.storage-directory}")
+  private String folderPath;
+
   private final FileEntityRepository filesRepository;
   private final FolderRepository folderRepository;
-  private final DirectoryCreator directoryCreator;
-  private final UUIDUtils uuidUtils;
   private final FileUtility fileUtility;
+  private final UUIDUtils uuidUtils;
 
   @Override
-  public UploadFileResponse upload(
-      MultipartFile file, Long folderId, String rootFolderName, Member owner) throws IOException {
+  public UploadFileResponse upload(MultipartFile file, Long folderId, Member owner) {
+    // 1. 파일 원래 이름과 확장자 추출
     String originalFilename = file.getOriginalFilename();
-    String extension = originalFilename.substring(originalFilename.lastIndexOf(".") + 1);
+    String extension = fileUtility.extractFileExtension(originalFilename);
+
+    // 2. UUID를 이용한 새로운 파일 이름 생성
     String newFileName = uuidUtils.getUUID() + "." + extension;
 
-    Folder targetFolder;
-    if (folderId != null) {
-      // folderId 값이 제공되면 해당 폴더에 파일을 업로드
-      targetFolder =
-          folderRepository
-              .findById(folderId)
-              .orElseThrow(() -> new FileNotFoundException(ErrorCode.FOLDER_NOT_FOUND));
-    } else {
-      // folderId 값이 null이면 루트 폴더 또는 기본 폴더에 파일을 업로드
-      // 여기에서는 예시로 루트 폴더 경로를 사용
-      targetFolder = findOrCreateRootFolder(owner, rootFolderName);
-    }
+    // 루트 폴더 이름을 유저의 이메일로 설정
+    String rootFolderName = getRootFolderName(owner);
 
-    String targetFolderPath = targetFolder.getPath();
-    // 디렉토리 생성 로직 호출
-    directoryCreator.createDirectoryIfNotExists(targetFolderPath);
+    // 3. 파일 업로드 폴더 결정 (지정 폴더 or 기본 폴더)
+    Folder targetFolder = determineUploadFolder(folderId, owner);
+    String targetFolderPath = getFolderPath(targetFolder, rootFolderName);
+    fileUtility.createDirectoryIfNotExists(targetFolderPath);
 
-    String filePath = Paths.get(targetFolderPath, newFileName).toString();
+    // 4. 파일 업로드에 대한 제약 조건 검증 (중복 이름, 사용 가능한 공간 등)
+    validateFileUploadConstraints(targetFolderPath, newFileName, owner, file.getSize());
+
+    String filePath = fileUtility.createFilePath(targetFolderPath, newFileName);
 
     try {
-      // DB에 파일 정보를 저장
+      // 5. 실제 파일 저장 및 DB에 파일 정보 저장
+      file.transferTo(new File(filePath));
       filesRepository.save(
           FileEntity.builder()
               .fileName(originalFilename)
-              .fileType(file.getContentType()) // 파일의 MIME 타입을 설정
-              .size(file.getSize()) // 파일 크기를 설정
-              .path(filePath) // 파일 경로를 설정
-              .owner(owner) // 유저지정
-              .parentFolder(targetFolder) // parentFolder 속성을 설정
+              .fileType(file.getContentType())
+              .size(file.getSize())
+              .path(filePath)
+              .owner(owner)
+              .parentFolder(targetFolder)
               .build());
-
-      // 파일 시스템에 파일을 저장
-      file.transferTo(new File(filePath));
-
-      // 응답 객체를 생성하여 반환
-      UploadFileResponse response =
-          new UploadFileResponse(originalFilename, filePath, file.getContentType(), file.getSize());
-      log.info("File uploaded successfully: {}", originalFilename);
-      return response;
-
+      owner.increaseUsedSpace(file.getSize());
+      return new UploadFileResponse(
+          originalFilename, filePath, file.getContentType(), file.getSize());
     } catch (Exception e) {
       log.error("Failed to upload file: {}", originalFilename, e);
       throw new FileServiceException(ErrorCode.FILE_UPLOAD_FAILED);
     }
   }
 
-  private Folder findOrCreateRootFolder(Member owner, String rootFolderName) {
-    return folderRepository
-        .findByNameAndOwner(rootFolderName, owner)
-        .orElseThrow(
-            () -> {
-              // 루트 폴더가 존재하지 않는 경우 새로운 예외를 생성하고 발생
-              return new NoSuchElementException(ErrorCode.FOLDER_NOT_FOUND);
-            });
-  }
-
   @Override
   public Resource downloadFile(String encodedFileName, Member owner) throws IOException {
-    // URL 디코딩 과정 추가
+    // 1. 파일 이름 디코딩
     String fileName = URLDecoder.decode(encodedFileName, StandardCharsets.UTF_8);
 
-    // DB에서 fileName으로 FileEntity 객체를 찾아온다
+    // 2. DB에서 파일 정보 조회
     FileEntity fileEntity =
         filesRepository
             .findByFileName(fileName)
             .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
-    String filePathStr = fileEntity.getPath(); // 실제 저장된 경로와 이름을 가져온다
+    // 3. 파일 다운로드에 필요한 리소스 반환
+    return getResourceForDownload(fileEntity, owner);
+  }
+
+  @Override
+  public void deleteFile(Long fileId, Member member) {
+    // 1. DB에서 파일 정보 조회
+    FileEntity fileEntity =
+        filesRepository
+            .findById(fileId)
+            .orElseThrow(() -> new FileServiceException(ErrorCode.FILE_NOT_FOUND));
+
+    // 2. 파일 소유자 확인
+    if (!fileEntity.isOwnedBy(member)) {
+      throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+    }
 
     try {
-      Path filePath = Paths.get(filePathStr).normalize();
-      if (!fileUtility.exists(filePath)) {
-        throw new FileNotFoundException(ErrorCode.FILE_NOT_FOUND);
-      }
-
-      Resource resource = new UrlResource(filePath.toUri());
-
-      log.info("FileEntity owner: {}", fileEntity.getOwner());
-      log.info("Current owner: {}", owner);
-      if (!fileEntity.isOwnedBy(owner)) {
-        throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
-      }
-
-      String contentType = fileUtility.probeContentType(filePath);
-
-      if (contentType == null) {
-        throw new FileStorageException(ErrorCode.FILE_TYPE_DETERMINATION_FAILED);
-      }
-
-      log.info("File downloaded successfully: {}", fileName);
-
-      return resource;
-    } catch (IOException e) {
-      log.error("Failed to download file: {}", fileName, e);
-      throw new FileServiceException(ErrorCode.FILE_DOWNLOAD_FAILED);
+      // 3. 실제 파일 삭제 및 DB에서 파일 정보 삭제
+      fileUtility.deleteFile(Paths.get(fileEntity.getPath()));
+      member.decreaseUsedSpace(fileEntity.getSize());
+      filesRepository.delete(fileEntity);
+    } catch (Exception e) {
+      log.error("Failed to delete file: {}", fileEntity.getFileName(), e);
+      throw new FileServiceException(ErrorCode.FILE_DELETE_FAILED);
     }
+  }
+
+  // 경로
+  private String getFolderPath(Folder folder, String rootFolderName) {
+    return Paths.get(folderPath, rootFolderName, folder.getName()).normalize().toString();
+  }
+
+  // 지정 폴더 또는 기본 폴더 결정
+  private Folder determineUploadFolder(Long folderId, Member owner) {
+    return (folderId != null)
+        ? folderRepository
+            .findById(folderId)
+            .orElseThrow(() -> new FileNotFoundException(ErrorCode.FOLDER_NOT_FOUND))
+        : findRootFolderOrThrow(owner);
+  }
+
+  // 파일 업로드 제약 조건 검증
+  private void validateFileUploadConstraints(
+      String path, String name, Member owner, Long fileSize) {
+    if (isDuplicateName(path, name, owner.getId())) {
+      throw new FileServiceException(ErrorCode.DUPLICATE_FILE_NAME);
+    }
+
+    if (fileSize > owner.getAvailableSpace()) {
+      throw new FileServiceException(ErrorCode.STORAGE_LIMIT_EXCEEDED);
+    }
+  }
+
+  // 기본 폴더 검색 또는 예외 발생
+  private Folder findRootFolderOrThrow(Member owner) {
+    String rootFolderName = getRootFolderName(owner);
+    return folderRepository
+        .findByNameAndOwner(rootFolderName, owner)
+        .orElseThrow(() -> new NoSuchElementException(ErrorCode.FOLDER_NOT_FOUND));
+  }
+
+  private String getRootFolderName(Member owner) {
+    return owner.getEmail();
+  }
+
+  // 중복된 파일/폴더 이름이 있는지 검사
+  private boolean isDuplicateName(String path, String name, Long memberId) {
+    return folderRepository.countByPathAndNameOrFileName(path, name, memberId) > 0;
+  }
+
+  // 파일 다운로드에 필요한 리소스 생성 및 반환
+  private Resource getResourceForDownload(FileEntity fileEntity, Member owner) throws IOException {
+    Path filePath = Paths.get(fileEntity.getPath()).normalize();
+
+    if (!fileUtility.exists(filePath)) {
+      throw new FileNotFoundException(ErrorCode.FILE_NOT_FOUND);
+    }
+
+    if (!fileEntity.isOwnedBy(owner)) {
+      throw new AccessDeniedException(ErrorCode.ACCESS_DENIED);
+    }
+
+    String contentType = fileUtility.probeContentType(filePath);
+    if (contentType == null) {
+      throw new FileStorageException(ErrorCode.FILE_TYPE_DETERMINATION_FAILED);
+    }
+
+    return new UrlResource(filePath.toUri());
   }
 }
