@@ -57,7 +57,7 @@ jobs:
 
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: './build/jacoco/jacoco.xml'
+          file: ./build/jacoco/jacoco.xml
 
   style-test:
     runs-on: ubuntu-latest
