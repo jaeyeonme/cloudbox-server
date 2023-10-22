@@ -4,6 +4,11 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jaeyeon.numblemybox.fixture.MemberFixture;
+import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.service.LoginService;
+import io.jaeyeon.numblemybox.member.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,13 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.jaeyeon.numblemybox.fixture.MemberFixture;
-import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import io.jaeyeon.numblemybox.member.service.LoginService;
-import io.jaeyeon.numblemybox.member.service.MemberService;
 
 @WebMvcTest(MemberController.class)
 class MemberControllerTest {

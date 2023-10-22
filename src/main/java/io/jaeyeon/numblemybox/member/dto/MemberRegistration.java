@@ -1,11 +1,10 @@
 package io.jaeyeon.numblemybox.member.dto;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 public record MemberRegistration(
     @NotEmpty
