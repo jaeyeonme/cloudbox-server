@@ -3,6 +3,7 @@ package io.jaeyeon.numblemybox.folder.controller;
 import io.jaeyeon.numblemybox.annotation.CurrentMember;
 import io.jaeyeon.numblemybox.folder.service.FolderService;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -20,11 +21,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/folders")
+@Tag(name = "Folder 컨트롤러", description = "폴더 관련 API")
 public class FolderController {
 
   private final FolderService folderService;
 
   @GetMapping("/download/{folderId}")
+  @Tag(name = "폴더 다운로드", description = "폴더 다운로드 API")
   public ResponseEntity<Resource> downloadFolderAsZip(
       @PathVariable("folderId") Long folderId, @CurrentMember Member member) throws IOException {
     Resource resource = folderService.downloadFolderAsZip(folderId, member);
