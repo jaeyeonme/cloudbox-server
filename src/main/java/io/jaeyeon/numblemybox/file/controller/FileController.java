@@ -4,6 +4,7 @@ import io.jaeyeon.numblemybox.annotation.CurrentMember;
 import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.file.service.FileService;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -24,11 +25,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/files")
+@Tag(name = "File 컨트롤러", description = "파일 관련 API")
 public class FileController {
 
   private final FileService fileService;
 
   @PostMapping("/upload")
+  @Tag(name = "파일 업로드", description = "파일 업로드 API")
   public ResponseEntity<UploadFileResponse> uploadFile(
       @RequestPart("file") MultipartFile file,
       @RequestPart(value = "folderId", required = false) Long folderId,
@@ -39,6 +42,7 @@ public class FileController {
   }
 
   @GetMapping("/download/{fileName}")
+  @Tag(name = "파일 다운로드", description = "파일 다운로드 API")
   public ResponseEntity<Resource> downloadFile(
       @PathVariable("fileName") String fileName, @CurrentMember Member member) throws IOException {
     Resource resource = fileService.downloadFile(fileName, member);
