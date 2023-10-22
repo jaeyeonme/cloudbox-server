@@ -2,8 +2,6 @@
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
 # documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 name: Pull Request Test
 
 on:
@@ -20,12 +18,14 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.0.2
 
       - uses: dorny/paths-filter@v2
         id: changes
+
         with:
           filters: |
             application:
@@ -35,35 +35,40 @@ jobs:
       - name: JDK 설치
         if: steps.changes.outputs.application == 'true'
         uses: actions/setup-java@v3
+
         with:
           distribution: zulu
           java-version: 17
           cache: 'gradle'
+
       - name: Gradle Build
         if: steps.changes.outputs.application == 'true'
-        run: |
-          ./gradlew build --parallel
+        run: ./gradlew build --parallel
 
-      - name: Coverage Report
+      # Generate Jacoco coverage report after building the project.
+      - name: Generate Jacoco coverage report
         if: steps.changes.outputs.application == 'true'
-        uses: madrapps/jacoco-report@v1.6.1
+        run: ./gradlew jacocoTestReport
+
+      # Upload the generated Jacoco coverage report to Codecov.
+      - name: Upload coverage to Codecov
+        if: steps.changes.outputs.application == 'true'
+        uses: codecov/codecov-action@v3
+
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: Code Coverage
-          update-comment: true
-          min-coverage-overall: 30
-          min-coverage-changed-files: 30
-          paths: |
-            ${{ github.workspace }}/**/build/jacoco/jacoco.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: './build/jacoco/jacoco.xml'
 
   style-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Git Checkout
         uses: actions/checkout@v3.0.2
 
       - uses: dorny/paths-filter@v2
         id: changes
+
         with:
           filters: |
             application:
@@ -73,12 +78,13 @@ jobs:
       - name: JDK 설치
         if: steps.changes.outputs.application == 'true'
         uses: actions/setup-java@v3
+
         with:
           distribution: zulu
           java-version: 17
           cache: 'gradle'
 
+      # Check the code style after setting up JDK.
       - name: Style Check
         if: steps.changes.outputs.application == 'true'
-        run: |
-          ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck
