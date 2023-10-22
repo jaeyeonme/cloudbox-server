@@ -1,5 +1,10 @@
 package io.jaeyeon.numblemybox.member.service;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import io.jaeyeon.numblemybox.exception.ErrorCode;
 import io.jaeyeon.numblemybox.exception.NumbleMyBoxException;
 import io.jaeyeon.numblemybox.folder.domain.entity.Folder;
@@ -10,10 +15,6 @@ import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
 import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
@@ -52,6 +53,15 @@ public class GeneralMemberService implements MemberService {
   }
 
   @Override
+  public Member validateAndFindMemberByEmail(MemberRegistration dto, PasswordEncoder passwordEncoder) {
+    Member member = findMemberByEmail(dto.email());
+    if (!member.isPasswordMatching(dto.password(), passwordEncoder)) {
+      throw new NumbleMyBoxException(ErrorCode.INVALID_PASSWORD);
+    }
+    return member;
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public Member findMemberById(long id) {
     return memberRepository
@@ -59,12 +69,6 @@ public class GeneralMemberService implements MemberService {
         .orElseThrow(() -> new NumbleMyBoxException(ErrorCode.MEMBER_NOT_FOUND));
   }
 
-  @Override
-  @Transactional(readOnly = true)
-  public boolean isValidMember(MemberRegistration dto, PasswordEncoder passwordEncoder) {
-    Member member = findMemberByEmail(dto.email());
-    return member.isPasswordMatching(dto.password(), passwordEncoder);
-  }
 
   @Override
   public void changePassword(

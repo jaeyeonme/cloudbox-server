@@ -1,13 +1,5 @@
 package io.jaeyeon.numblemybox.member.controller;
 
-import io.jaeyeon.numblemybox.annotation.AuthenticationRequired;
-import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
-import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import io.jaeyeon.numblemybox.member.service.LoginService;
-import io.jaeyeon.numblemybox.member.service.MemberService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +9,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.jaeyeon.numblemybox.annotation.AuthenticationRequired;
+import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
+import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.service.LoginService;
+import io.jaeyeon.numblemybox.member.service.MemberService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
@@ -46,13 +47,9 @@ public class MemberController {
 
   @PostMapping("/login")
   public ResponseEntity<Void> login(@RequestBody @Valid MemberRegistration dto) {
-    boolean validMember = memberService.isValidMember(dto, passwordEncoder);
-    if (validMember) {
-      loginService.login(memberService.findMemberByEmail(dto.email()).getId());
-      return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    Member member = memberService.validateAndFindMemberByEmail(dto, passwordEncoder);
+    loginService.login(member.getId());
+    return ResponseEntity.status(HttpStatus.OK).build();
   }
 
   @AuthenticationRequired

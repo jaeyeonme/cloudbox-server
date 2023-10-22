@@ -4,7 +4,6 @@ import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
 
 public class MemberFixture {
-
   public static final Long MEMBER_UNIQUE_ID = 1L;
   public static final String UNIQUE_MEMBER_EMAIL = "testUnique@gmail.com";
   public static final String DUPLICATED_MEMBER_EMAIL = "testDuplicated@gmail.com";

@@ -2,14 +2,8 @@ package io.jaeyeon.numblemybox.member;
 
 import static org.mockito.BDDMockito.*;
 
-import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
-import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
-import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
-import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
-import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
-import io.jaeyeon.numblemybox.member.service.GeneralMemberService;
 import java.util.Optional;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +13,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import io.jaeyeon.numblemybox.folder.domain.repository.FolderRepository;
+import io.jaeyeon.numblemybox.folder.dto.StorageInfo;
+import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.jaeyeon.numblemybox.member.domain.repository.MemberRepository;
+import io.jaeyeon.numblemybox.member.dto.ChangePasswordRequest;
+import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
+import io.jaeyeon.numblemybox.member.service.GeneralMemberService;
 
 @ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
@@ -103,10 +105,10 @@ class MemberServiceTest {
         .willReturn(true);
 
     // when
-    boolean isValid = memberService.isValidMember(memberRegistration, passwordEncoder);
+    Member result = memberService.validateAndFindMemberByEmail(memberRegistration, passwordEncoder);
 
     // then
-    Assertions.assertTrue(isValid);
+    Assertions.assertEquals(result, member);
   }
 
   @Test

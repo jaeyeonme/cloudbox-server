@@ -1,7 +1,8 @@
 package io.jaeyeon.numblemybox.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
+import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
@@ -14,6 +15,7 @@ public enum ErrorCode {
   EMAIL_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "M-005", "이미 사용중인 이메일입니다."),
   IS_NOT_OWNER(HttpStatus.UNAUTHORIZED, "M-006", "작성자만 가능한 요청입니다."),
   UNAUTHENTICATED_ACCESS(HttpStatus.UNAUTHORIZED, "M-007", "인증되지 않은 사용자 입니다."),
+  INVALID_PASSWORD(HttpStatus.BAD_REQUEST, "M-008", "잘못된 비밀번호입니다."),
 
   /** Files */
   FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "F-001", "파일이 존재하지 않습니다."),
