@@ -1,14 +1,9 @@
 package io.jaeyeon.numblemybox.file.controller;
 
-import io.jaeyeon.numblemybox.annotation.CurrentMember;
-import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
-import io.jaeyeon.numblemybox.file.service.FileService;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -22,6 +17,14 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.jaeyeon.numblemybox.annotation.CurrentMember;
+import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
+import io.jaeyeon.numblemybox.file.service.FileService;
+import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/files")
@@ -30,8 +33,8 @@ public class FileController {
 
   private final FileService fileService;
 
-  @PostMapping("/upload")
-  @Tag(name = "파일 업로드", description = "파일 업로드 API")
+  @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  @Operation(summary = "파일 업로드 API", description = "파일 업로드. 최대 파일 크기는 10MB입니다.")
   public ResponseEntity<UploadFileResponse> uploadFile(
       @RequestPart("file") MultipartFile file,
       @RequestPart(value = "folderId", required = false) Long folderId,
@@ -42,7 +45,7 @@ public class FileController {
   }
 
   @GetMapping("/download/{fileName}")
-  @Tag(name = "파일 다운로드", description = "파일 다운로드 API")
+  @Operation(summary = "파일 다운로드 API", description = "파일 다운로드")
   public ResponseEntity<Resource> downloadFile(
       @PathVariable("fileName") String fileName, @CurrentMember Member member) throws IOException {
     Resource resource = fileService.downloadFile(fileName, member);
