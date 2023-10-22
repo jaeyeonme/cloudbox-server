@@ -4,6 +4,7 @@ import io.jaeyeon.numblemybox.annotation.CurrentMember;
 import io.jaeyeon.numblemybox.file.dto.UploadFileResponse;
 import io.jaeyeon.numblemybox.file.service.FileService;
 import io.jaeyeon.numblemybox.member.domain.entity.Member;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,8 +31,11 @@ public class FileController {
 
   private final FileService fileService;
 
-  @PostMapping("/upload")
-  @Tag(name = "파일 업로드", description = "파일 업로드 API")
+  @PostMapping(
+      value = "/upload",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
+  @Operation(summary = "파일 업로드 API", description = "파일 업로드. 최대 파일 크기는 10MB입니다.")
   public ResponseEntity<UploadFileResponse> uploadFile(
       @RequestPart("file") MultipartFile file,
       @RequestPart(value = "folderId", required = false) Long folderId,
@@ -42,7 +46,7 @@ public class FileController {
   }
 
   @GetMapping("/download/{fileName}")
-  @Tag(name = "파일 다운로드", description = "파일 다운로드 API")
+  @Operation(summary = "파일 다운로드 API", description = "파일 다운로드")
   public ResponseEntity<Resource> downloadFile(
       @PathVariable("fileName") String fileName, @CurrentMember Member member) throws IOException {
     Resource resource = fileService.downloadFile(fileName, member);
