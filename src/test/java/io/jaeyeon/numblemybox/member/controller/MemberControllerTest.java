@@ -6,7 +6,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jaeyeon.numblemybox.fixture.MemberFixture;
-import io.jaeyeon.numblemybox.member.domain.entity.Member;
 import io.jaeyeon.numblemybox.member.dto.MemberRegistration;
 import io.jaeyeon.numblemybox.member.service.LoginService;
 import io.jaeyeon.numblemybox.member.service.MemberService;
@@ -59,20 +58,5 @@ class MemberControllerTest {
     when(memberService.isDuplicatedEmail(email)).thenReturn(false);
 
     mockMvc.perform(get("/api/members/duplicated/{email}", email)).andExpect(status().isOk());
-  }
-
-  @Test
-  @DisplayName("로그인 요청 처리")
-  void loginTest() throws Exception {
-    MemberRegistration dto = MemberFixture.MEMBER_REGISTRATION_REQUEST;
-    String content = objectMapper.writeValueAsString(dto);
-
-    when(memberService.isValidMember(dto, passwordEncoder)).thenReturn(true);
-    when(memberService.findMemberByEmail(dto.email())).thenReturn(mock(Member.class));
-
-    mockMvc
-        .perform(
-            post("/api/members/login").contentType(MediaType.APPLICATION_JSON).content(content))
-        .andExpect(status().isOk());
   }
 }

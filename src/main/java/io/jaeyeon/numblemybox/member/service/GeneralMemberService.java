@@ -52,18 +52,21 @@ public class GeneralMemberService implements MemberService {
   }
 
   @Override
+  public Member validateAndFindMemberByEmail(
+      MemberRegistration dto, PasswordEncoder passwordEncoder) {
+    Member member = findMemberByEmail(dto.email());
+    if (!member.isPasswordMatching(dto.password(), passwordEncoder)) {
+      throw new NumbleMyBoxException(ErrorCode.INVALID_PASSWORD);
+    }
+    return member;
+  }
+
+  @Override
   @Transactional(readOnly = true)
   public Member findMemberById(long id) {
     return memberRepository
         .findMemberById(id)
         .orElseThrow(() -> new NumbleMyBoxException(ErrorCode.MEMBER_NOT_FOUND));
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public boolean isValidMember(MemberRegistration dto, PasswordEncoder passwordEncoder) {
-    Member member = findMemberByEmail(dto.email());
-    return member.isPasswordMatching(dto.password(), passwordEncoder);
   }
 
   @Override

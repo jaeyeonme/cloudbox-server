@@ -11,11 +11,11 @@ public interface MemberService {
 
   boolean isDuplicatedEmail(String email);
 
-  Member findMemberByEmail(String email);
-
   Member findMemberById(long id);
 
-  boolean isValidMember(MemberRegistration dto, PasswordEncoder passwordEncoder);
+  Member findMemberByEmail(String email);
+
+  Member validateAndFindMemberByEmail(MemberRegistration dto, PasswordEncoder passwordEncoder);
 
   void changePassword(
       Member member, ChangePasswordRequest requestDto, PasswordEncoder passwordEncoder);

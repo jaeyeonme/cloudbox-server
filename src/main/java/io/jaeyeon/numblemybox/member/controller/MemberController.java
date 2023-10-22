@@ -46,13 +46,9 @@ public class MemberController {
 
   @PostMapping("/login")
   public ResponseEntity<Void> login(@RequestBody @Valid MemberRegistration dto) {
-    boolean validMember = memberService.isValidMember(dto, passwordEncoder);
-    if (validMember) {
-      loginService.login(memberService.findMemberByEmail(dto.email()).getId());
-      return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    Member member = memberService.validateAndFindMemberByEmail(dto, passwordEncoder);
+    loginService.login(member.getId());
+    return ResponseEntity.status(HttpStatus.OK).build();
   }
 
   @AuthenticationRequired

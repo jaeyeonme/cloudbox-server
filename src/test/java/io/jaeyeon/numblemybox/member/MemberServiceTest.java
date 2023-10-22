@@ -103,10 +103,10 @@ class MemberServiceTest {
         .willReturn(true);
 
     // when
-    boolean isValid = memberService.isValidMember(memberRegistration, passwordEncoder);
+    Member result = memberService.validateAndFindMemberByEmail(memberRegistration, passwordEncoder);
 
     // then
-    Assertions.assertTrue(isValid);
+    Assertions.assertEquals(result, member);
   }
 
   @Test
