@@ -8,3 +8,23 @@
 
 <br>
 <br>
+
+## 📆 프로젝트 기간
+2023.10 ~ 2023.10
+
+<br>
+<br>
+
+## 📖 Stack
+Backend
+- Spring Boot 3.0.11
+- Spring Data JPA
+- Java 17
+- Gradle
+- H2
+
+<br>
+<br>
+
+## ✅ Project Goal
+- 
