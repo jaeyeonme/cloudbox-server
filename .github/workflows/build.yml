@@ -23,7 +23,7 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v3.0.2
 
-      - uses: dorny/paths-filter@v2.11.3
+      - uses: dorny/paths-filter@v2.11.1
         id: changes
 
         with:
