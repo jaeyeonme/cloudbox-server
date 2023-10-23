@@ -23,7 +23,7 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v3.0.2
 
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v2.11.3
         id: changes
 
         with:
@@ -59,6 +59,11 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./build/jacoco/jacoco.xml
 
+      - name: Job Summary for build-test
+        run: |
+          echo "## Build and Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Build: Successful" >> $GITHUB_STEP_SUMMARY
+
   style-test:
     runs-on: ubuntu-latest
 
@@ -88,3 +93,9 @@ jobs:
       - name: Style Check
         if: steps.changes.outputs.application == 'true'
         run: ./gradlew spotlessCheck
+
+
+      - name: Job Summary for style-test
+        run: |
+          echo "## Style Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Style: Verified" >> $GITHUB_STEP_SUMMARY
