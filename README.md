@@ -26,5 +26,11 @@ Backend
 <br>
 <br>
 
+## 📝 ERD
+
+
+<br>
+<br>
+
 ## ✅ Project Goal
 - 
