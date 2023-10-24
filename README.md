@@ -26,11 +26,16 @@ Backend
 <br>
 <br>
 
+## API 명세서
+
+<br>
+<br>
+
 ## 📝 ERD
 
 
 <br>
 <br>
 
-## ✅ Project Goal
-- 
+## ✅ 프로젝트 중점 사항
+### 개발 & 규칙 
