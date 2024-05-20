@@ -2,17 +2,14 @@ package io.jaeyeon.cloudboxserver.file.service;
 
 import io.jaeyeon.cloudboxserver.common.FileUtility;
 import io.jaeyeon.cloudboxserver.common.UUIDUtils;
+import io.jaeyeon.cloudboxserver.exception.CloudBoxException;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
-import io.jaeyeon.cloudboxserver.exception.FileNotFoundException;
-import io.jaeyeon.cloudboxserver.exception.FileServiceException;
-import io.jaeyeon.cloudboxserver.exception.FileStorageException;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
 import io.jaeyeon.cloudboxserver.file.dto.UploadFileResponse;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +19,8 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import static io.jaeyeon.cloudboxserver.exception.CloudBoxException.*;
 
 @Slf4j
 @Service
@@ -54,7 +53,7 @@ public class FileServiceImpl implements FileService {
       return new UploadFileResponse(
               originalFilename, filePath, file.getContentType(), file.getSize());
     } catch (Exception e) {
-      throw new RuntimeException("Failed to upload file: " + originalFilename, e);
+      throw new FileProcessingException(ErrorCode.FILE_UPLOAD_FAILED);
     }
   }
 
@@ -71,7 +70,7 @@ public class FileServiceImpl implements FileService {
     if (resource.exists()) {
       return resource;
     } else {
-      throw new RuntimeException("File not found " + fileName);
+      throw new FileNotFoundException(ErrorCode.FILE_NOT_FOUND);
     }
   }
 
@@ -80,13 +79,13 @@ public class FileServiceImpl implements FileService {
     FileEntity fileEntity =
             fileEntityRepository
                     .findById(fileId)
-                    .orElseThrow(() -> new RuntimeException("File not found " + fileId));
+                    .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
     try {
       fileUtility.deleteFile(Paths.get(fileEntity.getPath()));
       fileEntityRepository.delete(fileEntity);
     } catch (Exception e) {
-      throw new RuntimeException("Failed to delete file: " + fileEntity.getFileName(), e);
+      throw new FileStorageException(ErrorCode.FILE_DELETE_FAILED);
     }
   }
 }
