@@ -2,7 +2,6 @@ package io.jaeyeon.cloudboxserver.file.service;
 
 import io.jaeyeon.cloudboxserver.common.FileUtility;
 import io.jaeyeon.cloudboxserver.common.UUIDUtils;
-import io.jaeyeon.cloudboxserver.exception.CloudBoxException;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
@@ -12,6 +11,8 @@ import java.io.IOException;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -87,5 +88,11 @@ public class FileServiceImpl implements FileService {
     } catch (Exception e) {
       throw new FileStorageException(ErrorCode.FILE_DELETE_FAILED);
     }
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<FileEntity> listFiles() {
+    return fileEntityRepository.findAll();
   }
 }
