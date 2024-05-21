@@ -21,8 +21,8 @@ public class FileUtility {
     Files.createDirectories(path);
   }
 
-  public String createFilePath(String folderPath, String fileName) {
-    return Paths.get(folderPath, fileName).toString();
+  public String createFilePath(String fileName) {
+    return Paths.get(fileName).toString();
   }
 
   public void deleteFile(Path path) throws IOException {

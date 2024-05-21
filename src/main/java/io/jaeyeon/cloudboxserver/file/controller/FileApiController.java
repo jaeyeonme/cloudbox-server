@@ -26,7 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/files")
+@RequestMapping("/api/files")
 @Tag(name = "File 컨트롤러", description = "파일 관련 API")
 public class FileApiController {
 
@@ -36,12 +36,11 @@ public class FileApiController {
           value = "/upload",
           consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
           produces = MediaType.APPLICATION_JSON_VALUE)
-  @Operation(summary = "파일 업로드 API", description = "파일 업로드. 최대 파일 크기는 10MB입니다.")
+  @Operation(summary = "파일 업로드 API", description = "파일 업로드. 최대 파일 크기는 10MB")
   public ResponseEntity<UploadFileResponse> uploadFile(
-          @RequestPart("file") MultipartFile file,
-          @RequestPart("targetFolderPath") String targetFolderPath)
+          @RequestPart("file") MultipartFile file)
           throws IOException {
-    UploadFileResponse uploadFileResponse = fileService.upload(file, targetFolderPath);
+    UploadFileResponse uploadFileResponse = fileService.upload(file);
     return ResponseEntity.status(HttpStatus.OK).body(uploadFileResponse);
   }
 

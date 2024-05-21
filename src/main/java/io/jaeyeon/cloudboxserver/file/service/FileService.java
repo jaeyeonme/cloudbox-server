@@ -10,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileService {
   /* 파일 업로드 */
-  UploadFileResponse upload(MultipartFile file, String targetFolderPath) throws IOException;
+  UploadFileResponse upload(MultipartFile file) throws IOException;
 
   /* 파일 다운로드 */
   Resource downloadFile(String fileName) throws IOException;

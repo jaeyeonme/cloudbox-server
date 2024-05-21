@@ -34,13 +34,11 @@ public class FileServiceImpl implements FileService {
   private final UUIDUtils uuidUtils;
 
   @Override
-  public UploadFileResponse upload(MultipartFile file, String targetFolderPath) throws IOException {
+  public UploadFileResponse upload(MultipartFile file) throws IOException {
     String originalFilename = file.getOriginalFilename();
     String newFileName = uuidUtils.getUUID() + "." + originalFilename;
 
-    fileUtility.createDirectories(Paths.get(targetFolderPath));
-
-    String filePath = fileUtility.createFilePath(targetFolderPath, newFileName);
+    String filePath = fileUtility.createFilePath(newFileName);
 
     try {
       file.transferTo(new File(filePath));
