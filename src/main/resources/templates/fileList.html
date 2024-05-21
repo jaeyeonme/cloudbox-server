@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>File Upload and Download</title>
+</head>
+<body>
+<h1>File Upload and Download</h1>
+
+<h2>Upload File</h2>
+<form method="post" enctype="multipart/form-data" action="/files/upload">
+    <input type="file" name="file" />
+    <button type="submit">Upload</button>
+</form>
+
+<h2>Files</h2>
+<ul>
+    <li th:each="file : ${files}">
+        <a th:href="@{/files/download(fileName=${file.fileName})}" th:text="${file.fileName}"></a>
+        (Size: <span th:text="${file.size}"></span> bytes, Type: <span th:text="${file.fileType}"></span>)
+    </li>
+</ul>
+
+<div th:if="${message}">
+    <p th:text="${message}"></p>
+</div>
+
+</body>
+</html>
