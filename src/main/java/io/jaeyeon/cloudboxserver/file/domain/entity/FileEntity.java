@@ -38,7 +38,7 @@ public class FileEntity {
   private String fileType;
 
   @Builder
-  public FileEntity(String fileName, Long size, String path, String fileType) {
+  public FileEntity(String fileName, long size, String path, String fileType) {
     this.fileName = fileName;
     this.size = size;
     this.path = path;
