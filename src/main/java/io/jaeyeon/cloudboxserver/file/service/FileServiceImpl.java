@@ -4,6 +4,7 @@ import static io.jaeyeon.cloudboxserver.exception.CloudBoxException.*;
 
 import io.jaeyeon.cloudboxserver.common.FileUtility;
 import io.jaeyeon.cloudboxserver.common.UUIDUtils;
+import io.jaeyeon.cloudboxserver.exception.CloudBoxException;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,16 +46,20 @@ public class FileServiceImpl implements FileService {
     try {
       file.transferTo(new File(filePath));
       fileEntityRepository.save(
-          FileEntity.builder()
-              .fileName(originalFilename)
-              .fileType(file.getContentType())
-              .size(file.getSize())
-              .path(filePath)
-              .build());
+              FileEntity.builder()
+                      .fileName(originalFilename)
+                      .fileType(file.getContentType())
+                      .size(file.getSize())
+                      .path(filePath)
+                      .build());
       return new UploadFileResponse(
-          originalFilename, filePath, file.getContentType(), file.getSize());
-    } catch (Exception e) {
-      throw new FileProcessingException(ErrorCode.FILE_UPLOAD_FAILED);
+              originalFilename, filePath, file.getContentType(), file.getSize());
+    } catch (IOException e) {
+      log.error("File transfer failed for file: {}", originalFilename, e);
+      throw new FileTransferException(ErrorCode.FILE_TRANSFER_FAILED);
+    } catch (DataAccessException e) {
+      log.error("Database operation failed for file: {}", originalFilename, e);
+      throw new FileDatabaseSaveException(ErrorCode.FILE_DATABASE_SAVE_FAILED);
     }
   }
 

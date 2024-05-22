@@ -4,14 +4,16 @@ import lombok.Getter;
 
 @Getter
 public sealed class CloudBoxException extends RuntimeException
-    permits CloudBoxException.AccessDeniedException,
+        permits CloudBoxException.AccessDeniedException,
         CloudBoxException.FileDatabaseException,
         CloudBoxException.FileNotFoundException,
         CloudBoxException.FileProcessingException,
         CloudBoxException.FileServiceException,
         CloudBoxException.FileStorageException,
         CloudBoxException.NoSuchElementException,
-        CloudBoxException.StorageLimitExceededException {
+        CloudBoxException.StorageLimitExceededException,
+        CloudBoxException.FileTransferException,
+        CloudBoxException.FileDatabaseSaveException {
 
   private final ErrorCode errorCode;
 
@@ -64,6 +66,18 @@ public sealed class CloudBoxException extends RuntimeException
 
   public static final class StorageLimitExceededException extends CloudBoxException {
     public StorageLimitExceededException(ErrorCode errorCode) {
+      super(errorCode);
+    }
+  }
+
+  public static final class FileTransferException extends CloudBoxException {
+    public FileTransferException(ErrorCode errorCode) {
+      super(errorCode);
+    }
+  }
+
+  public static final class FileDatabaseSaveException extends CloudBoxException {
+    public FileDatabaseSaveException(ErrorCode errorCode) {
       super(errorCode);
     }
   }
