@@ -3,8 +3,8 @@ package io.jaeyeon.cloudboxserver.exception;
 import lombok.Getter;
 
 @Getter
-public sealed class CloudBoxException extends RuntimeException permits
-        CloudBoxException.AccessDeniedException,
+public sealed class CloudBoxException extends RuntimeException
+    permits CloudBoxException.AccessDeniedException,
         CloudBoxException.FileDatabaseException,
         CloudBoxException.FileNotFoundException,
         CloudBoxException.FileProcessingException,

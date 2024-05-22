@@ -1,20 +1,20 @@
 package io.jaeyeon.cloudboxserver.file.service;
 
+import static io.jaeyeon.cloudboxserver.exception.CloudBoxException.*;
+
 import io.jaeyeon.cloudboxserver.common.FileUtility;
 import io.jaeyeon.cloudboxserver.common.UUIDUtils;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
 import io.jaeyeon.cloudboxserver.file.dto.UploadFileResponse;
+import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import java.io.File;
 import java.io.IOException;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-
-import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -22,8 +22,6 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import static io.jaeyeon.cloudboxserver.exception.CloudBoxException.*;
 
 @Slf4j
 @Service
@@ -45,14 +43,14 @@ public class FileServiceImpl implements FileService {
     try {
       file.transferTo(new File(filePath));
       fileEntityRepository.save(
-              FileEntity.builder()
-                      .fileName(originalFilename)
-                      .fileType(file.getContentType())
-                      .size(file.getSize())
-                      .path(filePath)
-                      .build());
+          FileEntity.builder()
+              .fileName(originalFilename)
+              .fileType(file.getContentType())
+              .size(file.getSize())
+              .path(filePath)
+              .build());
       return new UploadFileResponse(
-              originalFilename, filePath, file.getContentType(), file.getSize());
+          originalFilename, filePath, file.getContentType(), file.getSize());
     } catch (Exception e) {
       throw new FileProcessingException(ErrorCode.FILE_UPLOAD_FAILED);
     }
@@ -75,9 +73,9 @@ public class FileServiceImpl implements FileService {
   @Override
   public Resource downloadFile(String fileName) throws IOException {
     FileEntity fileEntity =
-            fileEntityRepository
-                    .findByFileName(fileName)
-                    .orElseThrow(() -> new RuntimeException("File not found " + fileName));
+        fileEntityRepository
+            .findByFileName(fileName)
+            .orElseThrow(() -> new RuntimeException("File not found " + fileName));
 
     Path filePath = Paths.get(fileEntity.getPath()).normalize();
     Resource resource = new UrlResource(filePath.toUri());
@@ -92,9 +90,9 @@ public class FileServiceImpl implements FileService {
   @Override
   public void deleteFile(Long fileId) {
     FileEntity fileEntity =
-            fileEntityRepository
-                    .findById(fileId)
-                    .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
+        fileEntityRepository
+            .findById(fileId)
+            .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
     try {
       fileUtility.deleteFile(Paths.get(fileEntity.getPath()));

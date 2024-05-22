@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -29,42 +28,40 @@ public class FileApiController {
   private final FileService fileService;
 
   @PostMapping(
-          value = "/upload",
-          consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-          produces = MediaType.APPLICATION_JSON_VALUE)
+      value = "/upload",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
   @Operation(summary = "파일 업로드 API", description = "파일 업로드. 최대 파일 크기는 10MB")
-  public ResponseEntity<UploadFileResponse> uploadFile(
-          @RequestPart("file") MultipartFile file)
-          throws IOException {
+  public ResponseEntity<UploadFileResponse> uploadFile(@RequestPart("file") MultipartFile file)
+      throws IOException {
     UploadFileResponse uploadFileResponse = fileService.upload(file);
     return ResponseEntity.status(HttpStatus.OK).body(uploadFileResponse);
   }
 
   @PostMapping(
-          value = "/upload/multiple",
-          consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
-          produces = MediaType.APPLICATION_JSON_VALUE)
+      value = "/upload/multiple",
+      consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
+      produces = MediaType.APPLICATION_JSON_VALUE)
   @Operation(summary = "다중 파일 업로드 API", description = "다중 파일 업로드. 각 파일의 최대 크기는 10MB")
   public ResponseEntity<UploadMultipleFilesResponse> uploadMultipleFiles(
-          @RequestParam("files") List<MultipartFile> files)
-          throws IOException {
+      @RequestParam("files") List<MultipartFile> files) throws IOException {
     UploadMultipleFilesResponse response = fileService.uploadMultiple(files);
     return ResponseEntity.status(HttpStatus.OK).body(response);
   }
 
   @GetMapping("/download/{fileName}")
   @Operation(summary = "파일 다운로드 API", description = "파일 다운로드")
-  public ResponseEntity<Resource> downloadFile(
-          @PathVariable("fileName") String fileName) throws IOException {
+  public ResponseEntity<Resource> downloadFile(@PathVariable("fileName") String fileName)
+      throws IOException {
     Resource resource = fileService.downloadFile(fileName);
     String contentType = Files.probeContentType(Paths.get(resource.getURI()));
 
     return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(contentType))
-            .header(
-                    HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"" + resource.getFilename() + "\"")
-            .body(resource);
+        .contentType(MediaType.parseMediaType(contentType))
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + resource.getFilename() + "\"")
+        .body(resource);
   }
 
   @GetMapping("/list")
