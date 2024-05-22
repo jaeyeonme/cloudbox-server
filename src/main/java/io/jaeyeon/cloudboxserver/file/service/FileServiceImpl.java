@@ -21,6 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -120,8 +123,9 @@ public class FileServiceImpl implements FileService {
   }
 
   @Override
-  @Transactional(readOnly = true)
-  public List<FileEntity> listFiles() {
-    return fileEntityRepository.findAll();
+  public List<FileEntity> listFiles(int page, int size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Page<FileEntity> filePage = fileEntityRepository.findAll(pageable);
+    return filePage.getContent();
   }
 }

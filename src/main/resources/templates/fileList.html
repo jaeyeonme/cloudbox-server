@@ -20,6 +20,13 @@
     </li>
 </ul>
 
+<!-- Pagination controls -->
+<div>
+    <a th:if="${currentPage > 0}" th:href="@{|/files?page=${currentPage - 1}|}">Previous</a>
+    <span>Page <span th:text="${currentPage + 1}"></span></span>
+    <a th:if="${files.size() == 10}" th:href="@{|/files?page=${currentPage + 1}|}">Next</a>
+</div>
+
 <div th:if="${message}">
     <p th:text="${message}"></p>
 </div>

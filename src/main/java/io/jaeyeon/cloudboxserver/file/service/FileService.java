@@ -13,5 +13,5 @@ public interface FileService {
   UploadMultipleFilesResponse uploadMultiple(List<MultipartFile> files) throws IOException;
   Resource downloadFile(String fileName) throws IOException;
   void deleteFile(Long fileId);
-  List<FileEntity> listFiles();
+  List<FileEntity> listFiles(int page, int size);
 }
