@@ -1,12 +1,10 @@
 package io.jaeyeon.cloudboxserver.common;
 
 import java.util.UUID;
-import org.springframework.stereotype.Component;
 
-@Component
 public class UUIDUtils {
 
-  public String getUUID() {
+  public static String getUUIDv4() {
     return UUID.randomUUID().toString();
   }
 }

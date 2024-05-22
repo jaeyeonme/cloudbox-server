@@ -36,13 +36,12 @@ public class FileServiceImpl implements FileService {
 
   private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private final FileEntityRepository fileEntityRepository;
-  private final UUIDUtils uuidUtils;
 
   @Override
   public UploadFileResponse upload(MultipartFile file) throws IOException {
     validateFile(file);
     String originalFilename = file.getOriginalFilename();
-    String newFileName = uuidUtils.getUUID() + "." + originalFilename;
+    String newFileName = UUIDUtils.getUUIDv4() + "." + originalFilename;
 
     String filePath = FileUtility.createFilePath(newFileName);
 
