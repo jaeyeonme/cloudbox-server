@@ -91,9 +91,8 @@ public class FileServiceImpl implements FileService {
   @Override
   public Resource downloadFile(String fileName) throws IOException {
     FileEntity fileEntity =
-        fileEntityRepository
-            .findByFileName(fileName)
-            .orElseThrow(() -> new RuntimeException("File not found " + fileName));
+            fileEntityRepository.findByFileName(fileName)
+                    .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
     Path filePath = Paths.get(fileEntity.getPath()).normalize();
     Resource resource = new UrlResource(filePath.toUri());
