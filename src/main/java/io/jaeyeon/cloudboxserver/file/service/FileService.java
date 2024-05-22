@@ -5,12 +5,16 @@ import io.jaeyeon.cloudboxserver.file.dto.UploadFileResponse;
 import java.io.IOException;
 import java.util.List;
 
+import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileService {
   /* 파일 업로드 */
   UploadFileResponse upload(MultipartFile file) throws IOException;
+
+  /* 다중 파일 업로드 */
+  UploadMultipleFilesResponse uploadMultiple(List<MultipartFile> files) throws IOException;
 
   /* 파일 다운로드 */
   Resource downloadFile(String fileName) throws IOException;

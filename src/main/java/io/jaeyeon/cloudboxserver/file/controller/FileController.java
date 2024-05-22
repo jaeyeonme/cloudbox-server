@@ -1,6 +1,7 @@
 package io.jaeyeon.cloudboxserver.file.controller;
 
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
+import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import io.jaeyeon.cloudboxserver.file.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,13 @@ public class FileController {
     public String uploadFile(@RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes) throws IOException {
         fileService.upload(file);
         redirectAttributes.addFlashAttribute("message", "File uploaded successfully: " + file.getOriginalFilename());
+        return "redirect:/files/";
+    }
+
+    @PostMapping("/upload/multiple")
+    public String uploadMultipleFiles(@RequestParam("files") List<MultipartFile> files, RedirectAttributes redirectAttributes) throws IOException {
+        UploadMultipleFilesResponse response = fileService.uploadMultiple(files);
+        redirectAttributes.addFlashAttribute("message", "Files uploaded successfully: " + response.files().size());
         return "redirect:/files/";
     }
 

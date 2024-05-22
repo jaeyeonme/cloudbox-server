@@ -11,8 +11,10 @@ import java.io.IOException;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
+import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -54,6 +56,20 @@ public class FileServiceImpl implements FileService {
     } catch (Exception e) {
       throw new FileProcessingException(ErrorCode.FILE_UPLOAD_FAILED);
     }
+  }
+
+  @Override
+  public UploadMultipleFilesResponse uploadMultiple(List<MultipartFile> files) throws IOException {
+    List<UploadFileResponse> responses = new ArrayList<>();
+    long totalSize = 0;
+
+    for (MultipartFile file : files) {
+      UploadFileResponse response = upload(file);
+      responses.add(response);
+      totalSize += file.getSize();
+    }
+
+    return new UploadMultipleFilesResponse(responses, totalSize);
   }
 
   @Override
