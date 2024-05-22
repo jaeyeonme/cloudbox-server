@@ -25,9 +25,10 @@ public class FileController {
   private final FileService fileService;
 
   @GetMapping("/")
-  public String listFiles(@RequestParam(defaultValue = "0") int page,
-                          @RequestParam(defaultValue = "10") int size,
-                          Model model) {
+  public String listFiles(
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size,
+      Model model) {
     List<FileEntity> files = fileService.listFiles(page, size);
     model.addAttribute("files", files);
     model.addAttribute("currentPage", page);

@@ -10,8 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface FileService {
   UploadFileResponse upload(MultipartFile file) throws IOException;
+
   UploadMultipleFilesResponse uploadMultiple(List<MultipartFile> files) throws IOException;
+
   Resource downloadFile(String fileName) throws IOException;
+
   void deleteFile(Long fileId);
+
   List<FileEntity> listFiles(int page, int size);
 }

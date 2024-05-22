@@ -67,7 +67,7 @@ public class FileApiController {
   @GetMapping
   @Operation(summary = "파일 리스트 API", description = "업로드된 파일 리스트를 반환")
   public ResponseEntity<List<FileEntity>> getAllFiles(
-          @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
     List<FileEntity> files = fileService.listFiles(page, size);
     return ResponseEntity.status(HttpStatus.OK).body(files);
   }

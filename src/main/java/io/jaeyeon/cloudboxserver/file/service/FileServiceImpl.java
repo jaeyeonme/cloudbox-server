@@ -4,7 +4,6 @@ import static io.jaeyeon.cloudboxserver.exception.CloudBoxException.*;
 
 import io.jaeyeon.cloudboxserver.common.FileUtility;
 import io.jaeyeon.cloudboxserver.common.UUIDUtils;
-import io.jaeyeon.cloudboxserver.exception.CloudBoxException;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
@@ -48,14 +47,14 @@ public class FileServiceImpl implements FileService {
     try {
       file.transferTo(new File(filePath));
       fileEntityRepository.save(
-              FileEntity.builder()
-                      .fileName(originalFilename)
-                      .fileType(file.getContentType())
-                      .size(file.getSize())
-                      .path(filePath)
-                      .build());
+          FileEntity.builder()
+              .fileName(originalFilename)
+              .fileType(file.getContentType())
+              .size(file.getSize())
+              .path(filePath)
+              .build());
       return new UploadFileResponse(
-              originalFilename, filePath, file.getContentType(), file.getSize());
+          originalFilename, filePath, file.getContentType(), file.getSize());
     } catch (IOException e) {
       log.error("File transfer failed for file: {}", originalFilename, e);
       throw new FileTransferException(ErrorCode.FILE_TRANSFER_FAILED);
@@ -93,8 +92,9 @@ public class FileServiceImpl implements FileService {
   @Override
   public Resource downloadFile(String fileName) throws IOException {
     FileEntity fileEntity =
-            fileEntityRepository.findByFileName(fileName)
-                    .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
+        fileEntityRepository
+            .findByFileName(fileName)
+            .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
     Path filePath = Paths.get(fileEntity.getPath()).normalize();
     Resource resource = new UrlResource(filePath.toUri());

@@ -41,8 +41,7 @@ public enum ErrorCode {
   STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
 
   /** Common */
-  INVALID_PATH(HttpStatus.BAD_REQUEST, "C-001", "잘못된 경로입니다.")
-  ;
+  INVALID_PATH(HttpStatus.BAD_REQUEST, "C-001", "잘못된 경로입니다.");
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;
