@@ -38,7 +38,11 @@ public enum ErrorCode {
   DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다."),
 
   /** Storage */
-  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다.");
+  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
+
+  /** Common */
+  INVALID_PATH(HttpStatus.BAD_REQUEST, "C-001", "잘못된 경로입니다.")
+  ;
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;
