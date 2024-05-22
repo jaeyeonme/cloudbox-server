@@ -30,7 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileServiceImpl implements FileService {
 
   private final FileEntityRepository fileEntityRepository;
-  private final FileUtility fileUtility;
   private final UUIDUtils uuidUtils;
 
   @Override
@@ -38,7 +37,7 @@ public class FileServiceImpl implements FileService {
     String originalFilename = file.getOriginalFilename();
     String newFileName = uuidUtils.getUUID() + "." + originalFilename;
 
-    String filePath = fileUtility.createFilePath(newFileName);
+    String filePath = FileUtility.createFilePath(newFileName);
 
     try {
       file.transferTo(new File(filePath));
@@ -95,7 +94,7 @@ public class FileServiceImpl implements FileService {
             .orElseThrow(() -> new FileNotFoundException(ErrorCode.FILE_NOT_FOUND));
 
     try {
-      fileUtility.deleteFile(Paths.get(fileEntity.getPath()));
+      FileUtility.deleteFile(Paths.get(fileEntity.getPath()));
       fileEntityRepository.delete(fileEntity);
     } catch (Exception e) {
       throw new FileStorageException(ErrorCode.FILE_DELETE_FAILED);
