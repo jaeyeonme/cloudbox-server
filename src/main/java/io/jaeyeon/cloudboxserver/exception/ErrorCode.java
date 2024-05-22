@@ -28,14 +28,16 @@ public enum ErrorCode {
   DUPLICATE_FILE_NAME(HttpStatus.BAD_REQUEST, "F-009", "파일 이름이 중복됩니다."),
   FILE_DELETE_FAILED(HttpStatus.BAD_REQUEST, "F-010", "파일 삭제에 실패했습니다."),
   FILE_PROCESSING_FAILED(HttpStatus.BAD_REQUEST, "F-011", "파일 처리에 실패했습니다."),
+  FILE_EMPTY(HttpStatus.BAD_REQUEST, "F-012", "파일이 비어있습니다."),
+  FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F-013", "파일 크기가 초과되었습니다."),
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
   DIRECTORY_CREATION_FAILED(HttpStatus.BAD_REQUEST, "F0-002", "디렉토리 생성에 실패했습니다."),
-
   /** Storage */
-  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
-  ;
+  STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다.");
+
+
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;

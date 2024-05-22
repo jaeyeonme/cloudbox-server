@@ -29,11 +29,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class FileServiceImpl implements FileService {
 
+  private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private final FileEntityRepository fileEntityRepository;
   private final UUIDUtils uuidUtils;
 
   @Override
   public UploadFileResponse upload(MultipartFile file) throws IOException {
+    validateFile(file);
     String originalFilename = file.getOriginalFilename();
     String newFileName = uuidUtils.getUUID() + "." + originalFilename;
 
@@ -61,12 +63,23 @@ public class FileServiceImpl implements FileService {
     long totalSize = 0;
 
     for (MultipartFile file : files) {
+      validateFile(file);
       UploadFileResponse response = upload(file);
       responses.add(response);
       totalSize += file.getSize();
     }
 
     return new UploadMultipleFilesResponse(responses, totalSize);
+  }
+
+  private void validateFile(MultipartFile file) {
+    if (file.isEmpty()) {
+      throw new FileProcessingException(ErrorCode.FILE_EMPTY);
+    }
+
+    if (file.getSize() > MAX_FILE_SIZE) {
+      throw new FileProcessingException(ErrorCode.FILE_SIZE_EXCEEDED);
+    }
   }
 
   @Override
