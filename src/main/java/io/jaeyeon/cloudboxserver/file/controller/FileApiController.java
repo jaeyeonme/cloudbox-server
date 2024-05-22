@@ -64,7 +64,7 @@ public class FileApiController {
         .body(resource);
   }
 
-  @GetMapping("/list")
+  @GetMapping
   @Operation(summary = "파일 리스트 API", description = "업로드된 파일 리스트를 반환")
   public ResponseEntity<List<FileEntity>> listFiles() {
     List<FileEntity> files = fileService.listFiles();
