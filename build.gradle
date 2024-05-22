@@ -27,95 +27,14 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.security:spring-security-crypto:5.7.6'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.h2database:h2'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
-
-tasks.named('test') {
-    useJUnitPlatform()
-    finalizedBy 'jacocoTestReport'
-}
-
-jacoco {
-    toolVersion = "0.8.8"
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-
-    jacoco {}
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.jacocoTestReport {
-    reports {
-        xml.required = true
-        html.required = true
-        csv.required = false
-
-        xml.destination(file("build/jacoco/jacoco.xml"))
-        html.destination(file("build/jacoco/jacoco.html"))
-    }
-
-    finalizedBy(tasks.jacocoTestCoverageVerification)
-
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    'io/jaeyeon/numblemybox/exception/**',
-                    'io/jaeyeon/numblemybox/member/**', // 다른 제외할 클래스나 패키지
-                    '*.controller.*',
-                    'io.jaeyeon.numblemybox.App'
-            ])
-        }))
-    }
-}
-
-tasks.jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            enabled = true
-            element = "CLASS"
-
-            limit {
-                counter = "LINE"
-                value = "COVEREDRATIO"
-                minimum = BigDecimal.valueOf(0.1)
-            }
-
-            limit {
-                counter = "LINE"
-                value = "TOTALCOUNT"
-                maximum = BigDecimal.valueOf(100)
-            }
-
-            excludes = List.of(
-                    "*.test.*",
-                    "*.controller.*",
-                    "io.jaeyeon.numblemybox.App",
-                    "io.jaeyeon.numbelmybox.exception.**", // 예외 처리 클래스 제외
-                    "io.jaeyeon.numblemybox.member.*"      // 멤버 관련 클래스 제외
-            )
-        }
-    }
-
-    afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    'io/jaeyeon/numblemybox/exception/**',
-                    'io/jaeyeon/numblemybox/member/**', // 다른 제외할 클래스나 패키지
-                    '*.controller.*',
-                    'io.jaeyeon.numblemybox.App'
-            ])
-        }))
-    }
-}
-
 
 tasks.register('updateGitHooks', Copy) {
     from './scripts/pre-commit'

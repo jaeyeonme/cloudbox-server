@@ -67,3 +67,5 @@ jobs:
       - name : Style Check
         run : ./gradlew spotlessCheck
 
+      - name: Apply Spotless
+        run: ./gradlew spotlessApply

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:mybox
+    url: jdbc:h2:mem:cloudboxserver
     username: "sa"
     driver-class-name: org.h2.Driver
   jpa:
