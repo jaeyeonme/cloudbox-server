@@ -1,13 +1,14 @@
 package io.jaeyeon.cloudboxserver.file.controller;
 
+import com.amazonaws.HttpMethod;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.dto.UploadMultipleFilesResponse;
 import io.jaeyeon.cloudboxserver.file.service.FileService;
+import io.jaeyeon.cloudboxserver.file.service.S3Service;
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping("/files")
 public class FileController {
 
-  @Value("${file.storage-directory}")
-  private String uploadDir;
-
   private final FileService fileService;
+  private final S3Service s3Service;
 
   @GetMapping("/")
   public String listFiles(
@@ -39,7 +38,12 @@ public class FileController {
   public String uploadFile(
       @RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes)
       throws IOException {
-    fileService.upload(file);
+    // Presigned URL을 생성
+    String fileName = file.getOriginalFilename();
+    URL presignedUrl = s3Service.generatePresignedUrl(fileName, "", HttpMethod.PUT);
+
+    s3Service.uploadToS3(file, presignedUrl);
+
     redirectAttributes.addFlashAttribute(
         "message", "File uploaded successfully: " + file.getOriginalFilename());
     return "redirect:/files/";
@@ -53,11 +57,5 @@ public class FileController {
     redirectAttributes.addFlashAttribute(
         "message", "Files uploaded successfully: " + response.files().size());
     return "redirect:/files/";
-  }
-
-  @GetMapping("/download")
-  @ResponseBody
-  public Resource downloadFile(@RequestParam String fileName) throws IOException {
-    return fileService.downloadFile(fileName);
   }
 }
