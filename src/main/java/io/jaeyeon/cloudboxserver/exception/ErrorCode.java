@@ -32,6 +32,10 @@ public enum ErrorCode {
   FILE_SIZE_EXCEEDED(HttpStatus.BAD_REQUEST, "F-013", "파일 크기가 초과되었습니다."),
   FILE_TRANSFER_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F-014", "파일 전송에 실패했습니다."),
   FILE_DATABASE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "F-015", "파일을 데이터베이스에 저장하는데 실패했습니다."),
+  INVALID_FILE_NAME(HttpStatus.BAD_REQUEST, "F-016", "파일 이름이 유효하지 않습니다."),
+  INVALID_EXTENSION(HttpStatus.BAD_REQUEST, "F-017", "확장자가 유효하지 않습니다."),
+  INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "F-018", "콘텐츠 타입이 유효하지 않습니다."),
+  INVALID_CONTENT_LENGTH(HttpStatus.BAD_REQUEST, "F-019", "콘텐츠 길이가 유효하지 않습니다."),
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),

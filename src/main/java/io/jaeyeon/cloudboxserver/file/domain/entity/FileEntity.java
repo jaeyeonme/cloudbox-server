@@ -25,15 +25,12 @@ public class FileEntity {
   @Column(nullable = false)
   private String fileName;
 
-  // Bytes
   @Column(nullable = false)
   private Long size;
 
-  // Path in local file system
   @Column(nullable = false)
   private String path;
 
-  // MIME type
   @Column(nullable = false)
   private String fileType;
 

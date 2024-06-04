@@ -1,8 +1,10 @@
 package io.jaeyeon.cloudboxserver.file.controller;
 
-import com.amazonaws.HttpMethod;
+import io.jaeyeon.cloudboxserver.file.dto.DownloadRequestDto;
+import io.jaeyeon.cloudboxserver.file.dto.DownloadResponseDto;
+import io.jaeyeon.cloudboxserver.file.dto.UploadRequestDto;
+import io.jaeyeon.cloudboxserver.file.dto.UploadResponseDto;
 import io.jaeyeon.cloudboxserver.file.service.S3Service;
-import java.net.URL;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +18,19 @@ public class FileApiController {
   private final S3Service s3Service;
 
   @GetMapping("/presigned-url")
-  public ResponseEntity<String> getUploadPresignedUrl(
-      @RequestParam String fileName, @RequestParam String extension) {
-    URL url = s3Service.generatePresignedUrl(fileName, extension, HttpMethod.PUT);
-    return ResponseEntity.ok(url.toString());
+  public ResponseEntity<UploadResponseDto> getUploadPresignedUrl(
+          @RequestParam("fileName") String fileName,
+          @RequestParam("extension") String extension,
+          @RequestParam("contentType") String contentType) {
+    UploadRequestDto requestDto = new UploadRequestDto(fileName, extension, contentType);
+    UploadResponseDto responseDto = s3Service.generatePresignedUrl(requestDto);
+    return ResponseEntity.ok(responseDto);
+  }
+
+  @GetMapping("/download-url")
+  public ResponseEntity<DownloadResponseDto> getDownloadPresignedUrl(
+          @RequestParam("fileName") String fileName) {
+    DownloadResponseDto responseDto = s3Service.generateDownloadPresignedUrl(fileName);
+    return ResponseEntity.ok(responseDto);
   }
 }
