@@ -1,11 +1,6 @@
 package io.jaeyeon.cloudboxserver.file.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,23 +20,21 @@ public class FileEntity {
   @Column(nullable = false)
   private String fileName;
 
-  // Bytes
   @Column(nullable = false)
   private Long size;
 
-  // Path in local file system
   @Column(nullable = false)
   private String path;
 
-  // MIME type
   @Column(nullable = false)
-  private String fileType;
+  @Enumerated(EnumType.STRING)
+  private FileType mine;
 
   @Builder
-  public FileEntity(String fileName, long size, String path, String fileType) {
+  public FileEntity(String fileName, Long size, String path, FileType mine) {
     this.fileName = fileName;
     this.size = size;
     this.path = path;
-    this.fileType = fileType;
+    this.mine = mine;
   }
 }

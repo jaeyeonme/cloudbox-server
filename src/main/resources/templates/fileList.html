@@ -7,8 +7,8 @@
 <h1>File Upload and Download</h1>
 
 <h2>Upload Files</h2>
-<form method="post" enctype="multipart/form-data" action="/files/upload/multiple">
-    <input type="file" name="files" multiple />
+<form method="post" enctype="multipart/form-data" action="/files/upload">
+    <input type="file" name="file" />
     <button type="submit">Upload</button>
 </form>
 
@@ -19,13 +19,6 @@
         (Size: <span th:text="${file.size}"></span> bytes, Type: <span th:text="${file.fileType}"></span>)
     </li>
 </ul>
-
-<!-- Pagination controls -->
-<div>
-    <a th:if="${currentPage > 0}" th:href="@{|/files?page=${currentPage - 1}|}">Previous</a>
-    <span>Page <span th:text="${currentPage + 1}"></span></span>
-    <a th:if="${files.size() == 10}" th:href="@{|/files?page=${currentPage + 1}|}">Next</a>
-</div>
 
 <div th:if="${message}">
     <p th:text="${message}"></p>
