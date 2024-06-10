@@ -85,7 +85,7 @@ public class FileService {
       long fileSize = objectSummary.getSize();
       String filePath = "s3://" + bucket + "/" + fileName;
       String mimeType = URLConnection.guessContentTypeFromName(fileName); // 파일 이름에서 MIME 타입 추측
-      FileType fileType = FileType.classifyType(mimeType); // 파일 유형 분류
+      FileType fileType = FileType.fromMine(mimeType); // 파일 유형 분류
 
       FileEntity fileEntity =
           fileEntityRepository

@@ -15,7 +15,7 @@ public enum FileType {
     this.mine = mine;
   }
 
-  public static FileType classifyType(String mine) {
+  public static FileType fromMine(String mine) {
     return Arrays.stream(FileType.values())
         .filter(fileType -> mine.startsWith(fileType.mine))
         .findFirst()
