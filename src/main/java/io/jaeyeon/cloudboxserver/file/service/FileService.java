@@ -76,7 +76,8 @@ public class FileService {
   }
 
   public List<FileEntity> listFiles(int page, int size) {
-    ListObjectsV2Request request = new ListObjectsV2Request().withBucketName(bucket).withMaxKeys(size);
+    ListObjectsV2Request request =
+        new ListObjectsV2Request().withBucketName(bucket).withMaxKeys(size);
     ListObjectsV2Result result = amazonS3.listObjectsV2(request);
     List<FileEntity> files = new ArrayList<>();
     for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
@@ -86,14 +87,21 @@ public class FileService {
       String mimeType = URLConnection.guessContentTypeFromName(fileName); // 파일 이름에서 MIME 타입 추측
       FileType fileType = FileType.classifyType(mimeType); // 파일 유형 분류
 
-      FileEntity fileEntity = fileEntityRepository.findByFileName(fileName)
-              .orElse(FileEntity.builder().fileName(fileName).size(fileSize).path(filePath).mine(fileType).build());
+      FileEntity fileEntity =
+          fileEntityRepository
+              .findByFileName(fileName)
+              .orElse(
+                  FileEntity.builder()
+                      .fileName(fileName)
+                      .size(fileSize)
+                      .path(filePath)
+                      .mine(fileType)
+                      .build());
 
       files.add(fileEntity);
     }
     return files;
   }
-
 
   public void uploadToS3(UploadRequestDto uploadRequestDto, MultipartFile file, URL presignedUrl)
       throws IOException {
