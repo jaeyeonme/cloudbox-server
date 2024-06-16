@@ -32,4 +32,10 @@ public class FileApiController {
     DownloadResponseDto responseDto = fileService.generateDownloadPresignedUrl(fileName);
     return ResponseEntity.ok(responseDto);
   }
+
+  @DeleteMapping("/file")
+  public ResponseEntity<Void> deleteFile(@RequestParam("fileName") String fileName) {
+    fileService.deleteFile(fileName);
+    return ResponseEntity.noContent().build();
+  }
 }

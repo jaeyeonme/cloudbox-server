@@ -35,11 +35,25 @@ public class FileService {
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
+  public void uploadFile(MultipartFile file) throws IOException {
+    String originalFileName = file.getOriginalFilename();
+    if (originalFileName == null) {
+      throw new IllegalArgumentException("파일 이름이 없습니다.");
+    }
+
+    String fileName = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+    String extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
+
+    UploadRequestDto requestDto = new UploadRequestDto(fileName, extension, file.getContentType());
+    UploadResponseDto responseDto = generatePresignedUrl(requestDto);
+
+    uploadToS3(requestDto, file, new URL(responseDto.presignedUrl()));
+  }
+
   public UploadResponseDto generatePresignedUrl(UploadRequestDto requestDto) {
     validateUploadRequestDto(requestDto);
 
-    String fileName = requestDto.fileName();
-    String extension = requestDto.extension();
+    String fileNameWithExtension = requestDto.fileName() + requestDto.extension();
     HttpMethod method = HttpMethod.PUT;
 
     Date expiration = new Date();
@@ -48,12 +62,12 @@ public class FileService {
     expiration.setTime(expTimeMillis);
 
     GeneratePresignedUrlRequest generatePresignedUrlRequest =
-        new GeneratePresignedUrlRequest(bucket, fileName + extension)
+        new GeneratePresignedUrlRequest(bucket, fileNameWithExtension)
             .withMethod(method)
             .withExpiration(expiration);
     URL presignedUrl = amazonS3.generatePresignedUrl(generatePresignedUrlRequest);
 
-    URL fileUrl = amazonS3.getUrl(bucket, fileName + extension);
+    URL fileUrl = amazonS3.getUrl(bucket, fileNameWithExtension);
 
     return new UploadResponseDto(presignedUrl.toString(), fileUrl.toString());
   }
@@ -81,21 +95,26 @@ public class FileService {
     ListObjectsV2Result result = amazonS3.listObjectsV2(request);
     List<FileEntity> files = new ArrayList<>();
     for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-      String fileName = objectSummary.getKey();
+      String fileNameWithExtension = objectSummary.getKey();
       long fileSize = objectSummary.getSize();
-      String filePath = "s3://" + bucket + "/" + fileName;
-      String mimeType = URLConnection.guessContentTypeFromName(fileName); // 파일 이름에서 MIME 타입 추측
-      FileType fileType = FileType.fromMine(mimeType); // 파일 유형 분류
+      String filePath = "s3://" + bucket + "/" + fileNameWithExtension;
+
+      String mimeType = URLConnection.guessContentTypeFromName(fileNameWithExtension);
+      FileType fileType = FileType.fromMine(mimeType);
+
+      String fileName = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.'));
+      String extension = fileNameWithExtension.substring(fileNameWithExtension.lastIndexOf('.'));
 
       FileEntity fileEntity =
           fileEntityRepository
-              .findByFileName(fileName)
+              .findByFileName(fileNameWithExtension)
               .orElse(
                   FileEntity.builder()
                       .fileName(fileName)
+                      .extension(extension)
                       .size(fileSize)
                       .path(filePath)
-                      .mine(fileType)
+                      .fileType(fileType)
                       .build());
 
       files.add(fileEntity);
@@ -121,6 +140,17 @@ public class FileService {
     if (responseCode != HttpURLConnection.HTTP_OK) {
       throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
     }
+  }
+
+  public void deleteFile(String fileName) {
+    amazonS3.deleteObject(bucket, fileName);
+
+    FileEntity fileEntity =
+        fileEntityRepository
+            .findByFileName(fileName)
+            .orElseThrow(() -> new FileUploadFailedException(ErrorCode.FILE_NOT_FOUND));
+
+    fileEntityRepository.delete(fileEntity);
   }
 
   private void validateUploadRequestDto(UploadRequestDto uploadRequestDto) {

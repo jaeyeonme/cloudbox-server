@@ -2,11 +2,8 @@ package io.jaeyeon.cloudboxserver.file.controller;
 
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.dto.DownloadResponseDto;
-import io.jaeyeon.cloudboxserver.file.dto.UploadRequestDto;
-import io.jaeyeon.cloudboxserver.file.dto.UploadResponseDto;
 import io.jaeyeon.cloudboxserver.file.service.FileService;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -38,13 +35,7 @@ public class FileController {
       @RequestParam("file") MultipartFile file, RedirectAttributes redirectAttributes)
       throws IOException {
 
-    String fileName = file.getOriginalFilename();
-
-    String extension = fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.')) : "";
-    UploadRequestDto requestDto = new UploadRequestDto(fileName, extension, file.getContentType());
-    UploadResponseDto responseDto = fileService.generatePresignedUrl(requestDto);
-
-    fileService.uploadToS3(requestDto, file, new URL(responseDto.presignedUrl()));
+    fileService.uploadFile(file);
 
     redirectAttributes.addFlashAttribute(
         "message", "File uploaded successfully: " + file.getOriginalFilename());
