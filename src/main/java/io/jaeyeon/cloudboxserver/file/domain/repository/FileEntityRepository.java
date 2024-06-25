@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface FileEntityRepository extends JpaRepository<FileEntity, Long> {
 
   Optional<FileEntity> findByFileName(String fileName);
+
+  void deleteByFileName(String fileName);
 }

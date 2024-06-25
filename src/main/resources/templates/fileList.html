@@ -12,11 +12,22 @@
     <button type="submit">Upload</button>
 </form>
 
-<h2>Files</h2>
+<h2>Create Folder</h2>
+<form method="post" action="/files/create-folder">
+    <input type="text" name="folderName" placeholder="Enter folder name" required />
+    <button type="submit">Create Folder</button>
+</form>
+
+<h2>Files and Folders</h2>
 <ul>
     <li th:each="file : ${files}">
         <a th:href="@{/files/download(fileName=${file.fileName})}" th:text="${file.fileName}"></a>
         (Size: <span th:text="${file.size}"></span> bytes, Type: <span th:text="${file.fileType}"></span>)
+        <form method="post" th:action="@{/files/delete}" th:object="${file}">
+            <input type="hidden" name="_method" value="DELETE"/>
+            <input type="hidden" name="fileName" th:value="${file.fileName}"/>
+            <button type="submit">Delete</button>
+        </form>
     </li>
 </ul>
 

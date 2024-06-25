@@ -33,12 +33,22 @@ public class FileEntity {
   @Enumerated(EnumType.STRING)
   private FileType fileType;
 
+  @Column(nullable = false)
+  private boolean isFolder;
+
   @Builder
-  public FileEntity(String fileName, Long size, String extension, String path, FileType fileType) {
+  public FileEntity(
+      String fileName,
+      Long size,
+      String extension,
+      String path,
+      FileType fileType,
+      boolean isFolder) {
     this.fileName = fileName;
     this.size = size;
     this.extension = extension;
     this.path = path;
     this.fileType = fileType;
+    this.isFolder = isFolder;
   }
 }

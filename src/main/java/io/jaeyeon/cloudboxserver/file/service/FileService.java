@@ -8,10 +8,10 @@ import com.amazonaws.services.s3.model.*;
 import io.jaeyeon.cloudboxserver.exception.ErrorCode;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileEntity;
 import io.jaeyeon.cloudboxserver.file.domain.entity.FileType;
-import io.jaeyeon.cloudboxserver.file.domain.repository.FileEntityRepository;
 import io.jaeyeon.cloudboxserver.file.dto.DownloadResponseDto;
 import io.jaeyeon.cloudboxserver.file.dto.UploadRequestDto;
 import io.jaeyeon.cloudboxserver.file.dto.UploadResponseDto;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -21,24 +21,25 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FileService {
 
   private final AmazonS3 amazonS3;
-  private final FileEntityRepository fileEntityRepository;
 
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
   public void uploadFile(MultipartFile file) throws IOException {
     String originalFileName = file.getOriginalFilename();
-    if (originalFileName == null) {
-      throw new IllegalArgumentException("파일 이름이 없습니다.");
+    if (originalFileName == null || !originalFileName.contains(".")) {
+      throw new IllegalArgumentException("유효한 파일 이름이 없습니다.");
     }
 
     String fileName = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
@@ -102,20 +103,32 @@ public class FileService {
       String mimeType = URLConnection.guessContentTypeFromName(fileNameWithExtension);
       FileType fileType = FileType.fromMine(mimeType);
 
-      String fileName = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.'));
-      String extension = fileNameWithExtension.substring(fileNameWithExtension.lastIndexOf('.'));
+      boolean isFolder = fileNameWithExtension.endsWith("/");
+
+      String fileName;
+      String extension;
+      if (isFolder) {
+        fileName = fileNameWithExtension;
+        extension = "";
+      } else {
+
+        int lastDotIndex = fileNameWithExtension.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+          throw new IllegalArgumentException("파일 이름에 확장자가 없습니다: " + fileNameWithExtension);
+        }
+        fileName = fileNameWithExtension.substring(0, lastDotIndex);
+        extension = fileNameWithExtension.substring(lastDotIndex);
+      }
 
       FileEntity fileEntity =
-          fileEntityRepository
-              .findByFileName(fileNameWithExtension)
-              .orElse(
-                  FileEntity.builder()
-                      .fileName(fileName)
-                      .extension(extension)
-                      .size(fileSize)
-                      .path(filePath)
-                      .fileType(fileType)
-                      .build());
+          FileEntity.builder()
+              .fileName(fileName)
+              .extension(extension)
+              .size(fileSize)
+              .path(filePath)
+              .fileType(fileType)
+              .isFolder(isFolder)
+              .build();
 
       files.add(fileEntity);
     }
@@ -142,15 +155,40 @@ public class FileService {
     }
   }
 
+  public URL generateDeletePresignedUrl(String fileName) {
+    Date expiration = new Date();
+    long expTimeMillis = expiration.getTime();
+    expTimeMillis += 1000 * 60 * 60; // 1 hour
+    expiration.setTime(expTimeMillis);
+
+    GeneratePresignedUrlRequest generatePresignedUrlRequest =
+        new GeneratePresignedUrlRequest(bucket, fileName)
+            .withMethod(HttpMethod.DELETE)
+            .withExpiration(expiration);
+
+    return amazonS3.generatePresignedUrl(generatePresignedUrlRequest);
+  }
+
   public void deleteFile(String fileName) {
-    amazonS3.deleteObject(bucket, fileName);
+    try {
+      URL deletePresignedUrl = generateDeletePresignedUrl(fileName);
+      log.info("생성된 DELETE용 Presigned URL: {}", deletePresignedUrl);
 
-    FileEntity fileEntity =
-        fileEntityRepository
-            .findByFileName(fileName)
-            .orElseThrow(() -> new FileUploadFailedException(ErrorCode.FILE_NOT_FOUND));
+      HttpURLConnection connection = (HttpURLConnection) deletePresignedUrl.openConnection();
+      connection.setRequestMethod("DELETE");
 
-    fileEntityRepository.delete(fileEntity);
+      int responseCode = connection.getResponseCode();
+      log.info("S3 DELETE 요청의 응답 코드: {}", responseCode);
+
+      if (responseCode != HttpURLConnection.HTTP_NO_CONTENT
+          && responseCode != HttpURLConnection.HTTP_OK) {
+        throw new FileDeleteFailedException(ErrorCode.FILE_DELETE_FAILED);
+      }
+      log.info("S3 파일 삭제 완료: {}", fileName);
+    } catch (IOException e) {
+      log.error("S3에서 파일 삭제 실패", e);
+      throw new FileDeleteFailedException(ErrorCode.FILE_DELETE_FAILED);
+    }
   }
 
   private void validateUploadRequestDto(UploadRequestDto uploadRequestDto) {
@@ -163,5 +201,16 @@ public class FileService {
     if (uploadRequestDto.contentType() == null || uploadRequestDto.contentType().isBlank()) {
       throw new FileUploadFailedException(ErrorCode.INVALID_CONTENT_TYPE);
     }
+  }
+
+  public void createFolder(String folderName) {
+    if (!folderName.endsWith("/")) {
+      folderName += "/";
+    }
+
+    ObjectMetadata metadata = new ObjectMetadata();
+    metadata.setContentLength(0);
+
+    amazonS3.putObject(bucket, folderName, new ByteArrayInputStream(new byte[0]), metadata);
   }
 }

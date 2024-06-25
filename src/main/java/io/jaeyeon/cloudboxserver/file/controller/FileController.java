@@ -47,4 +47,16 @@ public class FileController {
     DownloadResponseDto responseDto = fileService.generateDownloadPresignedUrl(fileName);
     return "redirect:" + responseDto.presignedUrl();
   }
+
+  @PostMapping("/create-folder")
+  public String createFolder(
+      @RequestParam("folderName") String folderName, RedirectAttributes redirectAttributes) {
+    try {
+      fileService.createFolder(folderName);
+      redirectAttributes.addFlashAttribute("message", "Folder created successfully: " + folderName);
+    } catch (RuntimeException e) {
+      redirectAttributes.addFlashAttribute("message", "Failed to create folder: " + folderName);
+    }
+    return "redirect:/files/";
+  }
 }
