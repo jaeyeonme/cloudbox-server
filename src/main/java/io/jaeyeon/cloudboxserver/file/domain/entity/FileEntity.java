@@ -24,17 +24,31 @@ public class FileEntity {
   private Long size;
 
   @Column(nullable = false)
+  private String extension;
+
+  @Column(nullable = false)
   private String path;
 
   @Column(nullable = false)
   @Enumerated(EnumType.STRING)
-  private FileType mine;
+  private FileType fileType;
+
+  @Column(nullable = false)
+  private boolean isFolder;
 
   @Builder
-  public FileEntity(String fileName, Long size, String path, FileType mine) {
+  public FileEntity(
+      String fileName,
+      Long size,
+      String extension,
+      String path,
+      FileType fileType,
+      boolean isFolder) {
     this.fileName = fileName;
     this.size = size;
+    this.extension = extension;
     this.path = path;
-    this.mine = mine;
+    this.fileType = fileType;
+    this.isFolder = isFolder;
   }
 }

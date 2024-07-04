@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:mybox
+    url: jdbc:h2:mem:cloudboxserver
     username: "sa"
     driver-class-name: org.h2.Driver
   jpa:
@@ -19,9 +19,15 @@ spring:
       settings:
         web-allow-others: true
 
-file:
-  multipart:
-    maxUploadSize: 10485760
-    maxUploadSizePerFile: 10485760
-  storage-directory: /Users/jaeyeon/Documents/github/numble-mybox-server/storage
+cloud:
+  aws:
+    region:
+      static: ${AWS_REGION}
+      auto: false
+    credentials:
+      access-key: ${AWS_S3_ACCESSKEY}
+      secret-key: ${AWS_S3_SECRETKEY}
+    s3:
+      bucket: ${AWS_S3_BUCKET}
+
 

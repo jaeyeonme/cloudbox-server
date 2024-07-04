@@ -7,6 +7,7 @@ public sealed class CloudBoxException extends RuntimeException
     permits CloudBoxException.AccessDeniedException,
         CloudBoxException.FileDatabaseException,
         CloudBoxException.FileDatabaseSaveException,
+        CloudBoxException.FileDeleteFailedException,
         CloudBoxException.FileNotFoundException,
         CloudBoxException.FileProcessingException,
         CloudBoxException.FileServiceException,
@@ -85,6 +86,12 @@ public sealed class CloudBoxException extends RuntimeException
 
   public static final class FileUploadFailedException extends CloudBoxException {
     public FileUploadFailedException(ErrorCode errorCode) {
+      super(errorCode);
+    }
+  }
+
+  public static final class FileDeleteFailedException extends CloudBoxException {
+    public FileDeleteFailedException(ErrorCode errorCode) {
       super(errorCode);
     }
   }
