@@ -142,7 +142,7 @@ public class FileService {
       return FileListResponseDto.of(files, result.nextContinuationToken(), result.isTruncated());
     } catch (Exception e) {
       log.error("Failed to list files", e);
-      throw new RuntimeException("Failed to list files", e);
+      throw new FileServiceException(ErrorCode.FILE_PROCESSING_FAILED);
     }
   }
 
