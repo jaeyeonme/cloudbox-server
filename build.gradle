@@ -31,7 +31,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
     // https://mvnrepository.com/artifact/com.amazonaws/aws-java-sdk-s3
-    implementation 'com.amazonaws:aws-java-sdk-s3:1.12.730'
+    // implementation 'com.amazonaws:aws-java-sdk-s3:1.12.730'
+
+    implementation(platform("software.amazon.awssdk:bom:2.21.1"))
+    implementation("software.amazon.awssdk:s3")
+    implementation("software.amazon.awssdk:presigner")
+
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'com.h2database:h2'
     annotationProcessor 'org.projectlombok:lombok'

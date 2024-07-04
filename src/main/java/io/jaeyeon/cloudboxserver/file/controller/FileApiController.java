@@ -1,6 +1,7 @@
 package io.jaeyeon.cloudboxserver.file.controller;
 
 import io.jaeyeon.cloudboxserver.file.dto.DownloadResponseDto;
+import io.jaeyeon.cloudboxserver.file.dto.FileListResponseDto;
 import io.jaeyeon.cloudboxserver.file.dto.UploadRequestDto;
 import io.jaeyeon.cloudboxserver.file.dto.UploadResponseDto;
 import io.jaeyeon.cloudboxserver.file.service.FileService;
@@ -51,5 +52,14 @@ public class FileApiController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Failed to create folder: " + folderName);
     }
+  }
+
+  @GetMapping("/list")
+  public ResponseEntity<FileListResponseDto> listFiles(
+      @RequestParam(defaultValue = "") String folderName,
+      @RequestParam(required = false) String continuationToken,
+      @RequestParam(defaultValue = "10") int size) {
+    FileListResponseDto responseDto = fileService.listFiles(folderName, continuationToken, size);
+    return ResponseEntity.ok(responseDto);
   }
 }

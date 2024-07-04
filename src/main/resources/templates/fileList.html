@@ -6,30 +6,46 @@
 <body>
 <h1>File Upload and Download</h1>
 
+<h2>Current Folder: <span th:text="${folderName}"></span></h2>
+
 <h2>Upload Files</h2>
 <form method="post" enctype="multipart/form-data" action="/files/upload">
     <input type="file" name="file" />
+    <input type="hidden" name="folderName" th:value="${folderName}" />
     <button type="submit">Upload</button>
 </form>
 
 <h2>Create Folder</h2>
 <form method="post" action="/files/create-folder">
     <input type="text" name="folderName" placeholder="Enter folder name" required />
+    <input type="hidden" name="parentFolder" th:value="${folderName}" />
     <button type="submit">Create Folder</button>
 </form>
 
 <h2>Files and Folders</h2>
 <ul>
+    <li th:if="${folderName != ''}">
+        <a th:href="@{/files/(folderName=${#strings.substringBeforeLast(folderName, '/')})}">📁 ..</a>
+    </li>
     <li th:each="file : ${files}">
-        <a th:href="@{/files/download(fileName=${file.fileName})}" th:text="${file.fileName}"></a>
+        <span th:if="${file.isFolder}">📁</span>
+        <span th:unless="${file.isFolder}">📄</span>
+        <a th:if="${file.isFolder}" th:href="@{/files/(folderName=${folderName} + ${file.fileName})}" th:text="${file.fileName}"></a>
+        <a th:unless="${file.isFolder}" th:href="@{/files/download(fileName=${folderName} + ${file.fileName})}" th:text="${file.fileName}"></a>
         (Size: <span th:text="${file.size}"></span> bytes, Type: <span th:text="${file.fileType}"></span>)
-        <form method="post" th:action="@{/files/delete}" th:object="${file}">
+        <form method="post" th:action="@{/files/delete}" style="display: inline;">
             <input type="hidden" name="_method" value="DELETE"/>
-            <input type="hidden" name="fileName" th:value="${file.fileName}"/>
+            <input type="hidden" name="fileName" th:value="${folderName} + ${file.fileName}"/>
             <button type="submit">Delete</button>
         </form>
     </li>
 </ul>
+
+<div th:if="${hasNextPage}">
+    <a th:href="@{/files/(folderName=${folderName},continuationToken=${nextContinuationToken},size=10)}">
+        Next Page
+    </a>
+</div>
 
 <div th:if="${message}">
     <p th:text="${message}"></p>
