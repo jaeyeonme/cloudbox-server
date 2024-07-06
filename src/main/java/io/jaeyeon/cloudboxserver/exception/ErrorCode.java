@@ -37,6 +37,7 @@ public enum ErrorCode {
   INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "F-018", "콘텐츠 타입이 유효하지 않습니다."),
   INVALID_CONTENT_LENGTH(HttpStatus.BAD_REQUEST, "F-019", "콘텐츠 길이가 유효하지 않습니다."),
   INVALID_FILE(HttpStatus.BAD_REQUEST, "F-020", "유효하지 않은 파일입니다."),
+  FILE_LIST_FAILED(HttpStatus.BAD_REQUEST, "F-021", "파일 목록을 불러오는데 실패했습니다."),
 
   /** Folder */
   FOLDER_NOT_FOUND(HttpStatus.NOT_FOUND, "F0-001", "폴더가 존재하지 않습니다."),
@@ -46,7 +47,8 @@ public enum ErrorCode {
   STORAGE_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "S-001", "저장 공간이 부족합니다."),
 
   /** Common */
-  INVALID_PATH(HttpStatus.BAD_REQUEST, "C-001", "잘못된 경로입니다.");
+  INVALID_PATH(HttpStatus.BAD_REQUEST, "C-001", "잘못된 경로입니다."),
+  ;
 
   ErrorCode(HttpStatus httpStatus, String errorCode, String message) {
     this.httpStatus = httpStatus;

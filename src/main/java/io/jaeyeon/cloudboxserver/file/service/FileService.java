@@ -38,18 +38,20 @@ public class FileService {
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
-  public void uploadFile(MultipartFile file, String folderName) throws IOException {
+  public void uploadFile(MultipartFile file, String folderPath) throws IOException {
     try {
       String originalFileName = file.getOriginalFilename();
       if (originalFileName == null || !originalFileName.contains(".")) {
         throw new FileUploadFailedException(ErrorCode.INVALID_FILE_NAME);
       }
 
+      if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
+        folderPath += "/";
+      }
+
       String fileName = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
       String extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
-
-      String fullPath =
-          folderName.isEmpty() ? fileName + extension : folderName + "/" + fileName + extension;
+      String fullPath = folderPath + fileName + extension;
 
       UploadRequestDto requestDto =
           new UploadRequestDto(fullPath, extension, file.getContentType());
@@ -117,12 +119,18 @@ public class FileService {
     }
   }
 
-  public FileListResponseDto listFiles(String folderName, String continuationToken, int size) {
+  public FileListResponseDto listFiles(String folderPath, String continuationToken, int size) {
     try {
-      String prefix =
-          folderName.isEmpty() ? "" : (folderName.endsWith("/") ? folderName : folderName + "/");
+      if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
+        folderPath += "/";
+      }
+
       ListObjectsV2Request.Builder requestBuilder =
-          ListObjectsV2Request.builder().bucket(bucket).prefix(prefix).delimiter("/").maxKeys(size);
+          ListObjectsV2Request.builder()
+              .bucket(bucket)
+              .prefix(folderPath)
+              .delimiter("/")
+              .maxKeys(size);
 
       if (continuationToken != null && !continuationToken.isEmpty()) {
         requestBuilder.continuationToken(continuationToken);
@@ -132,7 +140,10 @@ public class FileService {
       List<FileEntity> files = new ArrayList<>();
 
       for (S3Object s3Object : result.contents()) {
-        files.add(createFileEntityFromS3Object(s3Object));
+        // 현재 폴더 자체는 목록에서 제외
+        if (!s3Object.key().equals(folderPath)) {
+          files.add(createFileEntityFromS3Object(s3Object));
+        }
       }
 
       for (CommonPrefix commonPrefix : result.commonPrefixes()) {
@@ -142,7 +153,7 @@ public class FileService {
       return FileListResponseDto.of(files, result.nextContinuationToken(), result.isTruncated());
     } catch (Exception e) {
       log.error("Failed to list files", e);
-      throw new RuntimeException("Failed to list files", e);
+      throw new FileServiceException(ErrorCode.FILE_LIST_FAILED);
     }
   }
 
@@ -164,7 +175,7 @@ public class FileService {
 
   private FileEntity createFolderEntityFromCommonPrefix(CommonPrefix commonPrefix) {
     String folderPath = commonPrefix.prefix();
-    String folderName = folderPath.substring(0, folderPath.length() - 1); // 마지막 '/' 제거
+    String folderName = folderPath.substring(0, folderPath.length() - 1);
     folderName = folderName.substring(folderName.lastIndexOf('/') + 1);
 
     return FileEntity.builder()
@@ -258,5 +269,20 @@ public class FileService {
       log.error("Failed to create folder", e);
       throw new FileServiceException(ErrorCode.DIRECTORY_CREATION_FAILED);
     }
+  }
+
+  public String getParentFolderPath(String folderPath) {
+    if (folderPath == null || folderPath.isEmpty() || folderPath.equals("/")) {
+      return "";
+    }
+
+    if (folderPath.endsWith("/")) {
+      folderPath = folderPath.substring(0, folderPath.length() - 1);
+    }
+    int lastSlashIndex = folderPath.lastIndexOf('/');
+    if (lastSlashIndex == -1) {
+      return "";
+    }
+    return folderPath.substring(0, lastSlashIndex);
   }
 }

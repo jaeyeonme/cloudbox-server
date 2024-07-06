@@ -23,8 +23,11 @@ public class FileApiController {
   public ResponseEntity<UploadResponseDto> getUploadPresignedUrl(
       @RequestParam("fileName") String fileName,
       @RequestParam("extension") String extension,
-      @RequestParam("contentType") String contentType) {
-    UploadRequestDto requestDto = new UploadRequestDto(fileName, extension, contentType);
+      @RequestParam("contentType") String contentType,
+      @RequestParam(value = "folderPath", required = false, defaultValue = "") String folderPath) {
+
+    String fullPath = folderPath.isEmpty() ? fileName : folderPath + "/" + fileName;
+    UploadRequestDto requestDto = new UploadRequestDto(fullPath, extension, contentType);
     UploadResponseDto responseDto = fileService.generatePresignedUrl(requestDto);
     return ResponseEntity.ok(responseDto);
   }
