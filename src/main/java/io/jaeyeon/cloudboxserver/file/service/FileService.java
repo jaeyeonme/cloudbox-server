@@ -38,28 +38,24 @@ public class FileService {
   @Value("${cloud.aws.s3.bucket}")
   private String bucket;
 
-  public void uploadFile(MultipartFile file, String folderPath) throws IOException {
+  public String uploadFile(MultipartFile file, String folderPath) throws IOException {
     try {
       String originalFileName = file.getOriginalFilename();
       if (originalFileName == null || !originalFileName.contains(".")) {
         throw new FileUploadFailedException(ErrorCode.INVALID_FILE_NAME);
       }
 
-      if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
-        folderPath += "/";
-      }
-
-      String fileName = originalFileName.substring(0, originalFileName.lastIndexOf('.'));
+      String fullPath = getFullPath(folderPath, originalFileName);
       String extension = originalFileName.substring(originalFileName.lastIndexOf('.'));
-      String fullPath = folderPath + fileName + extension;
 
       UploadRequestDto requestDto =
-          new UploadRequestDto(fullPath, extension, file.getContentType());
+          new UploadRequestDto(fullPath, extension, file.getContentType(), folderPath);
       UploadResponseDto responseDto = generatePresignedUrl(requestDto);
 
       uploadToS3(requestDto, file, new URL(responseDto.presignedUrl()));
 
       log.info("File uploaded successfully: {}", responseDto.fileUrl());
+      return responseDto.finalFileUrl();
     } catch (Exception e) {
       log.error("Failed to upload file", e);
       throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
@@ -89,8 +85,10 @@ public class FileService {
       URL presignedUrl = presignedPutObjectRequest.url();
       URL fileUrl =
           s3Client.utilities().getUrl(builder -> builder.bucket(bucket).key(requestDto.fileName()));
+      String finalFileUrl = getFileUrl(requestDto.fileName());
 
-      return new UploadResponseDto(presignedUrl.toString(), fileUrl.toString());
+      return new UploadResponseDto(
+          presignedUrl.toString(), fileUrl.toString(), finalFileUrl, requestDto.folderPath());
     } catch (Exception e) {
       log.error("Failed to generate presigned URL", e);
       throw new FileServiceException(ErrorCode.FILE_PROCESSING_FAILED);
@@ -119,6 +117,27 @@ public class FileService {
     }
   }
 
+  public URL generateDeletePresignedUrl(String fileName) {
+    try {
+      DeleteObjectRequest deleteObjectRequest =
+          DeleteObjectRequest.builder().bucket(bucket).key(fileName).build();
+
+      DeleteObjectPresignRequest deleteObjectPresignRequest =
+          DeleteObjectPresignRequest.builder()
+              .signatureDuration(Duration.ofHours(1))
+              .deleteObjectRequest(deleteObjectRequest)
+              .build();
+
+      PresignedDeleteObjectRequest presignedDeleteObjectRequest =
+          s3Presigner.presignDeleteObject(deleteObjectPresignRequest);
+
+      return presignedDeleteObjectRequest.url();
+    } catch (Exception e) {
+      log.error("Failed to generate delete presigned URL", e);
+      throw new FileServiceException(ErrorCode.FILE_PROCESSING_FAILED);
+    }
+  }
+
   public FileListResponseDto listFiles(String folderPath, String continuationToken, int size) {
     try {
       if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
@@ -140,7 +159,6 @@ public class FileService {
       List<FileEntity> files = new ArrayList<>();
 
       for (S3Object s3Object : result.contents()) {
-        // 현재 폴더 자체는 목록에서 제외
         if (!s3Object.key().equals(folderPath)) {
           files.add(createFileEntityFromS3Object(s3Object));
         }
@@ -155,6 +173,75 @@ public class FileService {
       log.error("Failed to list files", e);
       throw new FileServiceException(ErrorCode.FILE_LIST_FAILED);
     }
+  }
+
+  public void createFolder(String folderName) {
+    try {
+      if (!folderName.endsWith("/")) {
+        folderName += "/";
+      }
+      s3Client.putObject(
+          PutObjectRequest.builder().bucket(bucket).key(folderName).build(), RequestBody.empty());
+
+      HeadObjectRequest headObjectRequest =
+          HeadObjectRequest.builder().bucket(bucket).key(folderName).build();
+      s3Client.headObject(headObjectRequest);
+    } catch (S3Exception e) {
+      log.error("Failed to create folder", e);
+      throw new FileServiceException(ErrorCode.DIRECTORY_CREATION_FAILED);
+    }
+  }
+
+  public void deleteFile(String fileName) {
+    try {
+      s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(fileName).build());
+    } catch (Exception e) {
+      log.error("Failed to delete file", e);
+      throw new FileDeleteFailedException(ErrorCode.FILE_DELETE_FAILED);
+    }
+  }
+
+  private void uploadToS3(UploadRequestDto uploadRequestDto, MultipartFile file, URL presignedUrl)
+      throws IOException {
+    try {
+      validateUploadRequestDto(uploadRequestDto);
+      HttpURLConnection connection = (HttpURLConnection) presignedUrl.openConnection();
+      connection.setDoOutput(true);
+      connection.setRequestMethod("PUT");
+      connection.setRequestProperty("Content-Type", file.getContentType());
+
+      try (OutputStream outputStream = connection.getOutputStream()) {
+        outputStream.write(file.getBytes());
+      }
+
+      int responseCode = connection.getResponseCode();
+      if (responseCode != HttpURLConnection.HTTP_OK) {
+        throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
+      }
+    } catch (Exception e) {
+      log.error("Failed to upload file to S3", e);
+      throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
+    }
+  }
+
+  private void validateUploadRequestDto(UploadRequestDto uploadRequestDto) {
+    if (uploadRequestDto.fileName() == null || uploadRequestDto.fileName().isBlank()) {
+      throw new FileUploadFailedException(ErrorCode.INVALID_FILE_NAME);
+    }
+    if (uploadRequestDto.extension() == null || uploadRequestDto.extension().isBlank()) {
+      throw new FileUploadFailedException(ErrorCode.INVALID_EXTENSION);
+    }
+    if (uploadRequestDto.contentType() == null || uploadRequestDto.contentType().isBlank()) {
+      throw new FileUploadFailedException(ErrorCode.INVALID_CONTENT_TYPE);
+    }
+  }
+
+  public String getFullPath(String folderPath, String fileName) {
+    return folderPath.isEmpty() ? fileName : folderPath + "/" + fileName;
+  }
+
+  public String getFileUrl(String fileName) {
+    return String.format("https://%s.s3.amazonaws.com/%s", bucket, fileName);
   }
 
   private FileEntity createFileEntityFromS3Object(S3Object s3Object) {
@@ -186,89 +273,6 @@ public class FileService {
         .fileType(FileType.FOLDER)
         .isFolder(true)
         .build();
-  }
-
-  public void uploadToS3(UploadRequestDto uploadRequestDto, MultipartFile file, URL presignedUrl)
-      throws IOException {
-    try {
-      validateUploadRequestDto(uploadRequestDto);
-      HttpURLConnection connection = (HttpURLConnection) presignedUrl.openConnection();
-      connection.setDoOutput(true);
-      connection.setRequestMethod("PUT");
-      connection.setRequestProperty("Content-Type", file.getContentType());
-
-      try (OutputStream outputStream = connection.getOutputStream()) {
-        outputStream.write(file.getBytes());
-      }
-
-      int responseCode = connection.getResponseCode();
-      if (responseCode != HttpURLConnection.HTTP_OK) {
-        throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
-      }
-    } catch (Exception e) {
-      log.error("Failed to upload file to S3", e);
-      throw new FileUploadFailedException(ErrorCode.FILE_UPLOAD_FAILED);
-    }
-  }
-
-  public URL generateDeletePresignedUrl(String fileName) {
-    try {
-      DeleteObjectRequest deleteObjectRequest =
-          DeleteObjectRequest.builder().bucket(bucket).key(fileName).build();
-
-      DeleteObjectPresignRequest deleteObjectPresignRequest =
-          DeleteObjectPresignRequest.builder()
-              .signatureDuration(Duration.ofHours(1))
-              .deleteObjectRequest(deleteObjectRequest)
-              .build();
-
-      PresignedDeleteObjectRequest presignedDeleteObjectRequest =
-          s3Presigner.presignDeleteObject(deleteObjectPresignRequest);
-
-      return presignedDeleteObjectRequest.url();
-    } catch (Exception e) {
-      log.error("Failed to generate delete presigned URL", e);
-      throw new FileServiceException(ErrorCode.FILE_PROCESSING_FAILED);
-    }
-  }
-
-  public void deleteFile(String fileName) {
-    try {
-      s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(fileName).build());
-    } catch (Exception e) {
-      log.error("Failed to delete file", e);
-      throw new FileDeleteFailedException(ErrorCode.FILE_DELETE_FAILED);
-    }
-  }
-
-  private void validateUploadRequestDto(UploadRequestDto uploadRequestDto) {
-    if (uploadRequestDto.fileName() == null || uploadRequestDto.fileName().isBlank()) {
-      throw new FileUploadFailedException(ErrorCode.INVALID_FILE_NAME);
-    }
-    if (uploadRequestDto.extension() == null || uploadRequestDto.extension().isBlank()) {
-      throw new FileUploadFailedException(ErrorCode.INVALID_EXTENSION);
-    }
-    if (uploadRequestDto.contentType() == null || uploadRequestDto.contentType().isBlank()) {
-      throw new FileUploadFailedException(ErrorCode.INVALID_CONTENT_TYPE);
-    }
-  }
-
-  public void createFolder(String folderName) {
-    try {
-      if (!folderName.endsWith("/")) {
-        folderName += "/";
-      }
-      s3Client.putObject(
-          PutObjectRequest.builder().bucket(bucket).key(folderName).build(), RequestBody.empty());
-
-      // 폴더 생성 확인
-      HeadObjectRequest headObjectRequest =
-          HeadObjectRequest.builder().bucket(bucket).key(folderName).build();
-      s3Client.headObject(headObjectRequest);
-    } catch (S3Exception e) {
-      log.error("Failed to create folder", e);
-      throw new FileServiceException(ErrorCode.DIRECTORY_CREATION_FAILED);
-    }
   }
 
   public String getParentFolderPath(String folderPath) {

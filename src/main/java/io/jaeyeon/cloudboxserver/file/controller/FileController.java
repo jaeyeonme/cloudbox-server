@@ -24,10 +24,7 @@ public class FileController {
       @RequestParam(required = false) String continuationToken,
       @RequestParam(defaultValue = "10") int size,
       Model model) {
-
-    if (!folderPath.isEmpty() && !folderPath.endsWith("/")) {
-      folderPath += "/";
-    }
+    folderPath = normalizeFolderPath(folderPath);
     FileListResponseDto responseDto = fileService.listFiles(folderPath, continuationToken, size);
 
     model.addAttribute("files", responseDto.files());
@@ -44,9 +41,10 @@ public class FileController {
       @RequestParam(value = "folderPath", defaultValue = "") String folderPath,
       RedirectAttributes redirectAttributes) {
     try {
-      fileService.uploadFile(file, folderPath);
+      String fileUrl = fileService.uploadFile(file, folderPath);
       redirectAttributes.addFlashAttribute(
           "message", "File uploaded successfully: " + file.getOriginalFilename());
+      redirectAttributes.addFlashAttribute("fileUrl", fileUrl);
     } catch (IOException e) {
       redirectAttributes.addFlashAttribute(
           "message", "Failed to upload file: " + file.getOriginalFilename());
@@ -57,7 +55,7 @@ public class FileController {
   @GetMapping("/download")
   public String downloadFile(
       @RequestParam("fileName") String fileName, @RequestParam("folderPath") String folderPath) {
-    String fullPath = folderPath.isEmpty() ? fileName : folderPath + "/" + fileName;
+    String fullPath = fileService.getFullPath(folderPath, fileName);
     DownloadResponseDto responseDto = fileService.generateDownloadPresignedUrl(fullPath);
     return "redirect:" + responseDto.presignedUrl();
   }
@@ -68,12 +66,16 @@ public class FileController {
       @RequestParam("parentFolder") String parentFolder,
       RedirectAttributes redirectAttributes) {
     try {
-      String fullPath = parentFolder.isEmpty() ? folderName : parentFolder + "/" + folderName;
+      String fullPath = fileService.getFullPath(parentFolder, folderName);
       fileService.createFolder(fullPath);
       redirectAttributes.addFlashAttribute("message", "Folder created successfully: " + folderName);
     } catch (RuntimeException e) {
       redirectAttributes.addFlashAttribute("message", "Failed to create folder: " + folderName);
     }
     return "redirect:/files/?folderPath=" + parentFolder;
+  }
+
+  private String normalizeFolderPath(String folderPath) {
+    return !folderPath.isEmpty() && !folderPath.endsWith("/") ? folderPath + "/" : folderPath;
   }
 }
