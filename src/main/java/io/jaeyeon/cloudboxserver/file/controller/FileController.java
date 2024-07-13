@@ -20,14 +20,16 @@ public class FileController {
 
   @GetMapping("/")
   public String listFiles(
-      @RequestParam(value = "folderName", defaultValue = "") String folderName,
+      @RequestParam(value = "folderPath", defaultValue = "") String folderPath,
       @RequestParam(required = false) String continuationToken,
       @RequestParam(defaultValue = "10") int size,
       Model model) {
-    FileListResponseDto responseDto = fileService.listFiles(folderName, continuationToken, size);
+    folderPath = normalizeFolderPath(folderPath);
+    FileListResponseDto responseDto = fileService.listFiles(folderPath, continuationToken, size);
 
     model.addAttribute("files", responseDto.files());
-    model.addAttribute("folderName", folderName);
+    model.addAttribute("folderPath", folderPath);
+    model.addAttribute("parentFolderPath", fileService.getParentFolderPath(folderPath));
     model.addAttribute("nextContinuationToken", responseDto.nextContinuationToken());
     model.addAttribute("hasNextPage", responseDto.hasNextPage());
     return "fileList";
@@ -36,23 +38,24 @@ public class FileController {
   @PostMapping("/upload")
   public String uploadFile(
       @RequestParam("file") MultipartFile file,
-      @RequestParam(value = "folderName", defaultValue = "") String folderName,
+      @RequestParam(value = "folderPath", defaultValue = "") String folderPath,
       RedirectAttributes redirectAttributes) {
     try {
-      fileService.uploadFile(file, folderName);
+      String fileUrl = fileService.uploadFile(file, folderPath);
       redirectAttributes.addFlashAttribute(
           "message", "File uploaded successfully: " + file.getOriginalFilename());
+      redirectAttributes.addFlashAttribute("fileUrl", fileUrl);
     } catch (IOException e) {
       redirectAttributes.addFlashAttribute(
           "message", "Failed to upload file: " + file.getOriginalFilename());
     }
-    return "redirect:/files/?folderName=" + folderName;
+    return "redirect:/files/?folderPath=" + folderPath;
   }
 
   @GetMapping("/download")
   public String downloadFile(
-      @RequestParam("fileName") String fileName, @RequestParam("folderName") String folderName) {
-    String fullPath = folderName.isEmpty() ? fileName : folderName + "/" + fileName;
+      @RequestParam("fileName") String fileName, @RequestParam("folderPath") String folderPath) {
+    String fullPath = fileService.getFullPath(folderPath, fileName);
     DownloadResponseDto responseDto = fileService.generateDownloadPresignedUrl(fullPath);
     return "redirect:" + responseDto.presignedUrl();
   }
@@ -63,12 +66,16 @@ public class FileController {
       @RequestParam("parentFolder") String parentFolder,
       RedirectAttributes redirectAttributes) {
     try {
-      String fullPath = parentFolder.isEmpty() ? folderName : parentFolder + "/" + folderName;
+      String fullPath = fileService.getFullPath(parentFolder, folderName);
       fileService.createFolder(fullPath);
       redirectAttributes.addFlashAttribute("message", "Folder created successfully: " + folderName);
     } catch (RuntimeException e) {
       redirectAttributes.addFlashAttribute("message", "Failed to create folder: " + folderName);
     }
-    return "redirect:/files/?folderName=" + parentFolder;
+    return "redirect:/files/?folderPath=" + parentFolder;
+  }
+
+  private String normalizeFolderPath(String folderPath) {
+    return !folderPath.isEmpty() && !folderPath.endsWith("/") ? folderPath + "/" : folderPath;
   }
 }
